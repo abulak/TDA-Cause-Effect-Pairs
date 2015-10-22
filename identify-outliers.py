@@ -7,6 +7,9 @@ import sys
 
 import numpy as np
 import numpy.ma as ma
+
+from sklearn.neighbors import NearestNeighbors
+
 import scipy.spatial as spsp
 
 
@@ -77,6 +80,44 @@ class DataPair:
             p -= mean
             p /= std
 
+    def find_outliers_knn(self, k_nearest):
+
+        neigh = NearestNeighbors()
+        neigh.fit(self.points)
+        distances, indices = neigh.kneighbors(self.points,
+                                              k_nearest + self.n_of_outliers)
+        self.outliers = []
+
+        for each in range(self.n_of_outliers):
+            print(self.name[-2:] + "::" + str(self.n_of_outliers - each),
+                  end="; ", flush=True)
+            distances_partial = distances[:, 1:k_nearest+1]
+            distances_vector = distances_partial.sum(1)
+            outlier = distances_vector.argmax()
+            self.outliers.append(outlier)
+
+            distances[outlier] = np.zeros(k_nearest + self.n_of_outliers)
+
+            for i, row in enumerate(indices):
+                if outlier in row:
+                    distances[i][np.where(row == outlier)[0][0]] = 1000
+                    distances[i].sort()
+        return self.outliers
+
+    def find_outliers_all(self):
+        distances_matrix = spsp.distance_matrix(self.points, self.points)
+        self.outliers = []
+
+        distances_vector = ma.masked_array(np.sum(distances_matrix, axis=1))
+        for i in range(self.n_of_outliers):
+            outlier = distances_vector.argmax()
+            print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
+                  end='; ', flush=True)
+            self.outliers.append(outlier)
+            distances_vector -= distances_matrix[:, outlier]
+            distances_vector[outlier] = ma.masked
+        return self.outliers
+
     def find_outliers(self, neighbours=0):
         """Procedure finding outliers based on nearest neighbours.
         if neighbours == 0 then all other points are taken into the account
@@ -87,60 +128,22 @@ class DataPair:
         distances_matrix = spsp.distance_matrix(self.points, self.points)
         self.outliers = []
 
-        def update_distances_vector():
-            for j, row in enumerate(neigh):
-                if j not in self.outliers:
-                    a = [distances_matrix[j][x]
-                         for x in row.compressed()[-neighbours:]]
-                    distances_vector[j] = sum(a)
-            distances_vector[self.outliers] = 0
-            return distances_vector
-
-        if int(neighbours) == 0:  # outlier based on max distance to all others
-            distances_vector = ma.masked_array(
-                np.sum(distances_matrix, axis=1))
-            for i in range(self.n_of_outliers):
-                outlier = distances_vector.argmax()
-                print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
-                      end='; ', flush=True)
-                self.outliers.append(outlier)
-                distances_vector -= distances_matrix[:, outlier]
-                distances_vector[outlier] = ma.masked
-        else:  # fixed number of neighbours to compute distances to.
-            distances_vector = np.zeros(distances_matrix.shape[0])
-            neigh = ma.masked_array(
-                np.zeros(distances_matrix.shape, dtype=np.int))
-            neigh.mask = neigh.data
-
-            for i, row in enumerate(distances_matrix):
-                neigh[i] = row.argsort()  # array of indices of points (sorted)
-
-            distances_vector = update_distances_vector()
-
-            for i in range(self.n_of_outliers):
-                outlier = distances_vector.argmax()
-                print(self.name[-2:] + "::" + str(self.n_of_outliers - i),
-                      end='; ', flush=True)
-                self.outliers.append(outlier)
-                distances_vector[outlier] = 0
-
-                for i, n in enumerate(neigh):
-                    out = np.where(n == outlier)
-                    neigh.mask[i][out] = 1
-#                 print(distances_vector)
-                distances_vector = update_distances_vector()
-#                 print(distances_vector)
-
-        if neighbours == 0:
-            suffix = 'all'
-        else:
-            suffix = 'knn'
-        self.save_outliers(suffix=suffix)
-        print(self.name + ' Done with outliers!')
+        try:
+            n = int(neighbours)
+            if n <= 0:  # outlier based on max distance to all others
+                self.outliers = self.find_outliers_all()
+                suffix = 'all'
+            else:
+                self.outliers = self.find_outliers_knn(neighbours)
+                suffix = 'knn'
+            self.save_outliers(suffix=suffix)
+            print(self.name + ' Done with outliers!')
+        except ValueError:
+            print('find_outliers received non-integer argument' )
 
     def save_outliers(self, suffix=''):
         np.savetxt(os.path.join(self.target_dir, "outliers_" + str(suffix)),
-                   np.asarray(self.outliers))
+                   np.asarray(self.outliers, dtype=int))
 
     def save_points_to_file(self, target_dir='', name="orig_points"):
         """Saves numpy.array accesible under name attribute to
@@ -150,7 +153,7 @@ class DataPair:
             target_dir = self.target_dir
 
         np.savetxt(os.path.join(target_dir, name),
-                   self.__getattribute__(name),)
+                   self.__getattribute__(name))
 
     def save_cleaned_points(self, target_dir='', suffix=''):
         """Saves the cleaned point into target_dir/cleaned_self.filename"""
