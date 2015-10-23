@@ -203,19 +203,17 @@ class GeometricComplex:
         # filtered_complex.sort(dionysus.data_dim_cmp)
         return filtered_complex
 
-    def real_coords(self, vertex):
-        """returns the physical coordinates of a vertex """
-        return self.points[vertex]
+    def real_coords(self, vertices):
+        """returns the physical coordinates of a list of vertices"""
+        return self.points[vertices]
 
     def sweep_function(self, simplex, axis, inverse):
         """ Given a simplex returns max value of the orthogonal projection
         on the axis.
         If inverse is set to true, it returns min value """
 
-        simplex_real_coordinates = [self.real_coords(i)
-                                    for i in simplex.vertices]
-        simplex_projection = [point[axis]
-                              for point in simplex_real_coordinates]
+        simplex_real_coordinates = self.real_coords(list(simplex.vertices))
+        simplex_projection = simplex_real_coordinates[:, axis]
 
         if not inverse:
             return max(simplex_projection) - self.minimums[axis]
