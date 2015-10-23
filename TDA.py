@@ -9,15 +9,7 @@ matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-# sys.path.append("./TDA-on-Pairs/")
-# sys.path.append("/home/kalmar/Dropbox/devel/Dionysus-python3/build-i686"
-#                 "/bindings/python")
-
-sys.path.append("/home/kalmar/Dropbox/devel/Dionysus-python3/build-x64"
-                "/bindings/python")
-
-# import dionysus
-
+sys.path.append("../Dionysus-python3/build/bindings/python")
 
 class FilteredComplex:
 
