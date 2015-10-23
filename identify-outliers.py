@@ -82,6 +82,8 @@ class DataPair:
 
     def find_outliers_knn(self, k_nearest):
 
+        print("Finding knn", self.n_of_outliers, "outliers in", self.name)
+
         neigh = NearestNeighbors()
         neigh.fit(self.points)
         distances, indices = neigh.kneighbors(self.points,
@@ -105,6 +107,9 @@ class DataPair:
         return self.outliers
 
     def find_outliers_all(self):
+
+        print("Finding all", self.n_of_outliers, "outliers in", self.name)
+
         distances_matrix = spsp.distance_matrix(self.points, self.points)
         self.outliers = []
 
@@ -122,8 +127,6 @@ class DataPair:
         """Procedure finding outliers based on nearest neighbours.
         if neighbours == 0 then all other points are taken into the account
         Outliers (their indexes in self.points) are stored in self.outliers"""
-
-        print("Finding", self.n_of_outliers, "outliers in", self.name)
 
         distances_matrix = spsp.distance_matrix(self.points, self.points)
         self.outliers = []
@@ -217,13 +220,13 @@ def workflow(filename, prefix, size):
     p.save_points_to_file()
 
     p.find_outliers(neighbours=2 * int(p.orig_points.shape[0] / 100))
-    if p.dimension == 2:
-        p.plot_points_pdf(suffix='knn')
+    # if p.dimension == 2:
+    #     p.plot_points_pdf(suffix='knn')
     p.find_outliers(neighbours=0)
-    if p.dimension == 2:
-        p.plot_points_pdf(suffix='all')
-    else:
-        print(p.name, p.dimension, "is too many to plot!")
+    # if p.dimension == 2:
+    #     p.plot_points_pdf(suffix='all')
+    # else:
+    #     print(p.name, p.dimension, "is too many to plot!")
     done_file = os.path.join(prefix_dir, filename[:-4], "done")
     print("Creating file", done_file)
     os.mknod(done_file)
@@ -295,7 +298,7 @@ def main(prefix, size=2000, jobs=1):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("No name for the prefix given. Aborting!")
-        print("Usage: clean_the_data prefix [-j N] [-f] [-k]")
+        print("Usage: identify_outliers [-j N] [-f] [-k]")
         print(
             "\t prefix \t dictionary name where cleaned data will be written")
         print("\t -j \t\t outlier removal will be performed in parallel")
