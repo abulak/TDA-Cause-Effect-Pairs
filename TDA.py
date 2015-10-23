@@ -254,20 +254,32 @@ class OutliersModel:
             self.geometric_complex.x_inv_filtration.distance()
             )
 
-        self.compute_scores_for_causality()
+        self.compute_topological_summary()
 
-    def compute_scores_for_causality(self):
+    def compute_topological_summary(self):
         """
         For each in self.outliers generate cleaned_points. Then construct
         GeometricComplex(cleaned_points) and compute its persistant 0-th
         homology.
 
-        Based on that generate scores for hypotheses.
+        We save the 0-persistence pairs in the _list_
+        self.persistence_pairs.
+
+        persistence_pairs[outlier] contains 4 items:
+        0: 0-persistence pairs for x_filtration
+        1: 0-persistence pairs for x_inv_filtration
+        2: 0-persistence pairs for y_filtration
+        3: 0-persistence pairs for y_inv_filtration
+
+        Based on that we generate scores for hypotheses.
 
         In particular the self.x_causes_y_scores and self.y_causes_x_scores
         are populated by this function.
         """
+
         points_masked = ma.MaskedArray(self.orig_points)
+        self.persistence_pairs = []
+
         for i, outlier in enumerate(self.outliers, start=1):
             print(str(self.outliers.shape[0]-i), end="; ",
                   flush=True)
@@ -275,6 +287,13 @@ class OutliersModel:
             cleaned_points = points_masked.compressed().reshape(
                 self.orig_points.shape[0] - i, self.dimension)
             self.geometric_complex = GeometricComplex(cleaned_points)
+
+            self.persistence_pairs.append([
+                self.geometric_complex.x_filtration.persistence_diagram_0,
+                self.geometric_complex.x_inv_filtration.persistence_diagram_0,
+                self.geometric_complex.y_filtration.persistence_diagram_0,
+                self.geometric_complex.y_inv_filtration.persistence_diagram_0])
+
             self.x_causes_y_scores[i] = max(
                 self.geometric_complex.y_filtration.distance(),
                 self.geometric_complex.y_inv_filtration.distance())
@@ -284,12 +303,10 @@ class OutliersModel:
 
 
 class Pair:
-
     """
     Encapsulates the whole logical concept behind Cause-Effect Pair.
     I.e. contains, the whole list of outliers, etc.
     """
-
     def __init__(self, prefix, pair_name):
         self.type = type
         self.prefix = prefix
@@ -298,23 +315,16 @@ class Pair:
             pair_name = pair_name[:-4]
         self.name = pair_name
         print(self.name, end=" ", flush=True)
-        # self.number = int(self.name[-4:])
 
         self.prefix_dir = os.path.join(os.getcwd(), self.prefix)
         self.directory = os.path.join(self.prefix_dir, self.name)
 
-        # self.metadata = self.all_pairs_metadata[self.number - 1]
-        # self.true_causality = int(self.metadata[1])
-        # self.weight = self.metadata[5]
-
         self.prepare_points()
 
-        self.all = OutliersModel(self.orig_points, self.outliers_all)
-        print("all-model scores stability done")
+        # self.all = OutliersModel(self.orig_points, self.outliers_all)
+        # print("all-model scores stability done")
         self.knn = OutliersModel(self.orig_points, self.outliers_knn)
         print("knn-model scores stability done")
-
-        self.plot_scores()
         print(self.name, "done!")
 
     def prepare_points(self):
@@ -327,18 +337,40 @@ class Pair:
         self.outliers_knn = np.loadtxt(os.path.join(self.directory,
             "outliers_knn")).astype(np.int)
 
-    def save_scores(self, filename='scores'):
-
+    def save_topological_summary(self):
         """
-        Saves knn and all OutlierModels causality_scores to "scores_knn" and
-        "scores_all" located in the pairXXXX directory.
+        Saves knn and all OutlierModels
+        persistence_pairs to "persistence_pairs_knn" and "persistence_pairs_all"
+        causality_scores to "scores_knn" and "scores_all"
+        located in the pairXXXX directory.
 
-        numpy array of two rows:
+        persistence_pairs is an outlier-indexed list of 4-tuples:
+        0: x_filtration pairs
+        1: x_inv_filtration paris
+        2: y_filtration pairs
+        3: y_inv_filtration pairs
+
+        causality_score is a numpy array of two rows:
         [0:,] x_causes_y_scores
         [1:,] y_causes_x_scores
         is numpy.savetxt-ed.
         """
+        self.save_scores()
+        self.save_diagrams()
 
+    def save_diagrams(self, filename='diagrams'):
+        file = os.path.join(self.directory, filename+'_knn')
+        with open(file, 'w') as f:
+            for line in self.knn.persistence_pairs:
+                f.write(line)
+
+        file = os.path.join(self.directory, filename+'_all')
+        with open(file, 'w') as f:
+            for line in self.knn.persistence_pairs:
+                f.write(line)
+
+
+    def save_scores(self, filename='scores'):
         file = os.path.join(self.directory, filename+'_knn')
         z = np.zeros((2, self.knn.x_causes_y_scores.shape[0]))
         z[0, :] = self.knn.x_causes_y_scores
@@ -383,6 +415,8 @@ def workflow(pair, prefix):
     # else:
     p = Pair(prefix, pair)
     p.save_scores()
+    p.save_diagrams()
+    p.plot_scores()
     # print('Saving results of', pair, 'done')
     return 1
 
