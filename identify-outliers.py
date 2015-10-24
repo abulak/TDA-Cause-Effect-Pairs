@@ -57,9 +57,9 @@ class DataPair:
             create target directory where all files will be saved."""
 
         self.initial_dir = os.getcwd()
-        print(self.initial_dir, prefix, self.name)
+        # print(self.initial_dir, prefix, self.name)
         self.target_dir = os.path.join(self.initial_dir, prefix, self.name)
-        os.mkdir(self.target_dir)
+        # os.mkdir(self.target_dir)
 
     def linearise(self):
         """Fit self.points to [0,1] interval in both coordinates"""
@@ -133,20 +133,22 @@ class DataPair:
 
         try:
             n = int(neighbours)
-            if n <= 0:  # outlier based on max distance to all others
-                self.outliers = self.find_outliers_all()
-                suffix = 'all'
-            else:
-                self.outliers = self.find_outliers_knn(neighbours)
-                suffix = 'knn'
-            self.save_outliers(suffix=suffix)
-            print(self.name + ' Done with outliers!')
         except ValueError:
-            print('find_outliers received non-integer argument' )
+            print('find_outliers received non-integer argument:', neighbours)
+        if n <= 0:  # outlier based on max distance to all others
+            self.outliers = self.find_outliers_all()
+            suffix = 'all'
+        else:
+            self.outliers = self.find_outliers_knn(neighbours)
+            suffix = 'knn'
+        self.save_outliers(suffix=suffix)
+        print(self.name + ' Done with outliers!')
+
 
     def save_outliers(self, suffix=''):
+        print(self.outliers)
         np.savetxt(os.path.join(self.target_dir, "outliers_" + str(suffix)),
-                   np.asarray(self.outliers, dtype=int))
+                   np.asarray(self.outliers, dtype=int), fmt='%d')
 
     def save_points_to_file(self, target_dir='', name="orig_points"):
         """Saves numpy.array accesible under name attribute to
@@ -213,128 +215,151 @@ class DataPair:
         print(self.name, "Done pdf!")
 
 
-def workflow(filename, prefix, size):
+def workflow(prefix, filename, size):
     prefix_dir = os.path.join(os.getcwd(), prefix)
     p = DataPair(filename, prefix, size)
-    p.standardise()
-    p.save_points_to_file()
+    if p.dimension == 2:
+        p.standardise()
+        p.save_points_to_file()
 
-    p.find_outliers(neighbours=2 * int(p.orig_points.shape[0] / 100))
-    # if p.dimension == 2:
-    #     p.plot_points_pdf(suffix='knn')
-    p.find_outliers(neighbours=0)
-    # if p.dimension == 2:
-    #     p.plot_points_pdf(suffix='all')
-    # else:
-    #     print(p.name, p.dimension, "is too many to plot!")
-    done_file = os.path.join(prefix_dir, filename[:-4], "done")
-    print("Creating file", done_file)
-    os.mknod(done_file)
+        p.find_outliers(neighbours=0)
+        # if p.dimension == 2:
+        #     p.plot_points_pdf(suffix='all')
 
+        p.find_outliers(neighbours=2 * int(p.orig_points.shape[0] / 100))
+        # if p.dimension == 2:
+        #     p.plot_points_pdf(suffix='knn')
 
-def main(prefix, size=2000, jobs=1):
+        # else:
+        #     print(p.name, p.dimension, "is too many to plot!")
+        done_file = os.path.join(prefix_dir, filename[:-4], "done")
+        print("Creating file", done_file)
+        os.mknod(done_file)
+        return 0
+    else:
+        return 1
 
-    random.seed(0)
-
-    pairs_dir = os.path.join(os.getcwd(), 'pairs')
+if __name__ == "__main__":
 
     blacklist = ['pair0023.txt',
                  'pair0033.txt',
                  'pair0037.txt',
                  'pair0047.txt',
-                 'pair0070.txt']  # pairs that do not fit the model at all
+                 'pair0070.txt']
 
-    pattern = re.compile('pair00..\.txt')
-    files = sorted([pattern.match(x).group() for x in os.listdir(pairs_dir)
-                    if pattern.match(x)])
-
-    # for now we use only 2d data:
-    for f in files:
-        with open(os.path.join(pairs_dir, f), 'r') as file:
-            first = file.readline().strip()
-            if len(first.split()) != 2:
-                print(f+" has to many dimensions")
-                blacklist.append(f)
-
-    done = []
-    import shutil
-
-    for f in files:
-        dest_dir = os.path.join(os.getcwd(), prefix, f[:-4])
-        # if the destination directory exists and contains "done" file we're
-        # done
-        if os.path.isdir(dest_dir) and "done" in os.listdir(dest_dir):
-            print("Directory " + dest_dir +
-                  " exists and appears to contain finished computations!")
-            done.append(f)
-        else:
-            # if it doesn't contain the "done" file, lets nuke the content
-            if os.path.isdir(dest_dir):
-                shutil.rmtree(dest_dir)
-
-    files = [f for f in files if f not in blacklist if f not in done]
-    if not files:
-        print("""No pairs to process. To delete old data try running
-              with --clean switch!""")
-    for f in files:
-        print(f)
-    print("Number of files to process: ", len(files))
-
-#     serial version:
-#     for f in files:
-#         workflow(f)
-
-#     parallel version:
-
-    from functools import partial
-
-    work = partial(workflow, prefix=prefix, size=size)
-
-    with Pool(jobs) as p:
-        p.map(work, files)
-
-#     call(["tar", "-acf", prefix + "_pairs.tar.xz", target_dir])
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("No name for the prefix given. Aborting!")
-        print("Usage: identify_outliers [-j N] [-f] [-k]")
-        print(
-            "\t prefix \t dictionary name where cleaned data will be written")
-        print("\t -j \t\t outlier removal will be performed in parallel")
-        print("\t\t\t autodetect number of workers (=no of cpus)")
-        print("\t -j N \t\t N parallel workers")
-        print("\t -f, --force \t overwrites files")
-        print(
-            "\t -k, --clean \t removes the whole prefix directory for clean start")
+    if len(sys.argv) < 3:
+        print("Usage: identify-outliers.py $PREFIX $FILENAME")
     else:
-        if '-j' in sys.argv[2:]:
-            k = sys.argv.index('-j')
-            if k + 1 != len(sys.argv) and sys.argv[k + 1].isdecimal():
-                jobs = int(sys.argv[k + 1])
-            else:
-                jobs = cpu_count()
-                print("Decided automatically on ", jobs, " jobs.")
-        else:
-            jobs = 1
-
         prefix = sys.argv[1]
-        prefix_dir = os.path.join(os.getcwd(), prefix)
-        if not os.path.isdir(prefix_dir):
-            print("Creating directory", prefix)
-            os.mkdir(prefix_dir)
-            main(prefix=prefix, jobs=jobs)
-
-        elif '-f' in sys.argv[2:] or '--force' in sys.argv[2:]:
-            print("Directory already exists. Overwriting files inside...")
-            if '-k' in sys.argv[2:] or '--clean' in sys.argv[2:]:
-                print("Deleting content of", prefix_dir)
-                import shutil
-                shutil.rmtree(prefix_dir)
-                os.mkdir(prefix_dir)
-            del prefix_dir
-            main(prefix=prefix, jobs=jobs)
-
+        file = sys.argv[2]
+        if file not in blacklist:
+            workflow(prefix, file, size=1000)
         else:
-            print("""Directory already exists. If You want to overwrite
-                        files inside try -f or --force""")
+            print(file, "is blacklisted! (it doesn't fit the model?)")
+#
+# def main(prefix, size=2000, jobs=1):
+#
+#     random.seed(0)
+#
+#     pairs_dir = os.path.join(os.getcwd(), 'pairs')
+#
+#     blacklist = ['pair0023.txt',
+#                  'pair0033.txt',
+#                  'pair0037.txt',
+#                  'pair0047.txt',
+#                  'pair0070.txt']  # pairs that do not fit the model at all
+#
+#     pattern = re.compile('pair00..\.txt')
+#     files = sorted([pattern.match(x).group() for x in os.listdir(pairs_dir)
+#                     if pattern.match(x)])
+#
+#     # for now we use only 2d data:
+#     for f in files:
+#         with open(os.path.join(pairs_dir, f), 'r') as file:
+#             first = file.readline().strip()
+#             if len(first.split()) != 2:
+#                 print(f+" has to many dimensions")
+#                 blacklist.append(f)
+#
+#     done = []
+#     import shutil
+#
+#     for f in files:
+#         dest_dir = os.path.join(os.getcwd(), prefix, f[:-4])
+#         # if the destination directory exists and contains "done" file we're
+#         # done
+#         if os.path.isdir(dest_dir) and "done" in os.listdir(dest_dir):
+#             print("Directory " + dest_dir +
+#                   " exists and appears to contain finished computations!")
+#             done.append(f)
+#         else:
+#             # if it doesn't contain the "done" file, lets nuke the content
+#             if os.path.isdir(dest_dir):
+#                 shutil.rmtree(dest_dir)
+#
+#     files = [f for f in files if f not in blacklist if f not in done]
+#     if not files:
+#         print("""No pairs to process. To delete old data try running
+#               with --clean switch!""")
+#     for f in files:
+#         print(f)
+#     print("Number of files to process: ", len(files))
+#
+# #     serial version:
+# #     for f in files:
+# #         workflow(f)
+#
+# #     parallel version:
+#
+#     from functools import partial
+#
+#     work = partial(workflow, prefix=prefix, size=size)
+#
+#     with Pool(jobs) as p:
+#         p.map(work, files)
+#
+# #     call(["tar", "-acf", prefix + "_pairs.tar.xz", target_dir])
+#
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("No name for the prefix given. Aborting!")
+#         print("Usage: identify_outliers [-j N] [-f] [-k]")
+#         print(
+#             "\t prefix \t dictionary name where cleaned data will be written")
+#         print("\t -j \t\t outlier removal will be performed in parallel")
+#         print("\t\t\t autodetect number of workers (=no of cpus)")
+#         print("\t -j N \t\t N parallel workers")
+#         print("\t -f, --force \t overwrites files")
+#         print(
+#             "\t -k, --clean \t removes the whole prefix directory for clean start")
+#     else:
+#         if '-j' in sys.argv[2:]:
+#             k = sys.argv.index('-j')
+#             if k + 1 != len(sys.argv) and sys.argv[k + 1].isdecimal():
+#                 jobs = int(sys.argv[k + 1])
+#             else:
+#                 jobs = cpu_count()
+#                 print("Decided automatically on ", jobs, " jobs.")
+#         else:
+#             jobs = 1
+#
+#         prefix = sys.argv[1]
+#         prefix_dir = os.path.join(os.getcwd(), prefix)
+#         if not os.path.isdir(prefix_dir):
+#             print("Creating directory", prefix)
+#             os.mkdir(prefix_dir)
+#             main(prefix=prefix, jobs=jobs)
+#
+#         elif '-f' in sys.argv[2:] or '--force' in sys.argv[2:]:
+#             print("Directory already exists. Overwriting files inside...")
+#             if '-k' in sys.argv[2:] or '--clean' in sys.argv[2:]:
+#                 print("Deleting content of", prefix_dir)
+#                 import shutil
+#                 shutil.rmtree(prefix_dir)
+#                 os.mkdir(prefix_dir)
+#             del prefix_dir
+#             main(prefix=prefix, jobs=jobs)
+#
+#         else:
+#             print("""Directory already exists. If You want to overwrite
+#                         files inside try -f or --force""")
