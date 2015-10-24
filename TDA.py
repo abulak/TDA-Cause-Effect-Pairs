@@ -75,31 +75,29 @@ class FilteredComplex:
                 else:
                     killing_simplex = self.smap[i.pair()]
                     death = killing_simplex.data
-                    if birth_simplex.dimension() == 0:
-                        h0.append([birth, death])
-                    # if birth_simplex.dimension() == 1:
-                    #     h1.append([birth, death])
+                    if death > birth:
+                        if birth_simplex.dimension() == 0:
+                            h0.append([birth, death])
+                        # if birth_simplex.dimension() == 1:
+                        #     h1.append([birth, death])
+                    else:
+                        pass
 
-        self.h_0 = np.asarray([x for x in h0 if (x[0] - x[1]) ** 2 > 0])
-        # list([x for x in H0]))
-        # self.h_1 = np.asarray(h1)
-        # list([x for x in H1]))
-
-#         h0 = np.asarray(list([x for x in h0 if (x[0] - x[1]) ** 2 > 0]))
-#         h1 = np.asarray(list([x for x in h1 if (x[0] - x[1]) ** 2 > 0]))
-#         i_life_0 = np.asarray(inf_life_0)
-#         i_life_1 = np.asarray(inf_life_1)
-#         return h0, h1, i_life_0, i_life_1
+        self.h_0 = h0
+        # self.h_1 = h1
+#       self.inf_life_0 = inf_life_0
+#       self.inf_life_1 = inf_life_1
+#         return h0, h1, inf_life_0, inf_life_1
 
     def create_persistence_diagrams(self):
-        if self.h_0.any():
+        if self.h_0:
             self.persistence_diagram_0 = self.dionysus.PersistenceDiagram(0)
             all_pairs = [tuple(x) for x in self.h_0]
             for x in all_pairs:
                 self.persistence_diagram_0.append(x)
         else:
             self.persistence_diagram_0 = self.empty_diagram
-#         if self.h_1.any():
+#         if self.h_1:
 #             self.persistence_diagram_1 = dionysus.PersistenceDiagram(1)
 #             all_pairs = [tuple(x) for x in self.h_1]
 #             for x in all_pairs:
@@ -121,7 +119,7 @@ class GeometricComplex:
     y_filtration
     y_inv_filtration
     """
-    dionysus = __import__('dionysus')
+    dionysus = __import__('dionysus')  # own copy of the not threadsafe library
 
     def __init__(self, cleaned_data):
 
@@ -145,29 +143,28 @@ class GeometricComplex:
             self.filtered_complex(1, inverse=True))
 
     def __create_full_complex__(self):
-        """Creates the full complex (i.e. dionysus object) on the self.points.
+        """
+        Creates the full complex (i.e. dionysus object) on the self.points.
         Depending on the dimension n of the points it may be alpha-complex
         (for n=2,3) or Rips-complex (for n>3).
 
-        Note that Rips complex may quickly become huge for dense datasets."""
+        Note that Rips complex may quickly become huge for dense datasets.
+        We generate Rips complex for higher-dimensional data;
+        We restrict to 1-skeleton (ie. points & edges) and build edges of
+        length  <=1.
+        This relies on the assumption that we deal with STANDARDISED DATA
+        """
         self.full_complex = self.dionysus.Filtration()
 
-        if self.dimension == 2:
-            self.dionysus.fill_alpha2D_complex(self.points.tolist(),
-                                               self.full_complex)
-        if self.dimension == 3:
-            self.dionysus.fill_alpha3D_complex(self.points.tolist(),
-                                               self.full_complex)
+        if self.dimension <= 3:
+            self.dionysus.fill_alpha_complex(self.points.tolist(),
+                                             self.full_complex)
         if self.dimension > 3:
             print("Using Rips-complex. This may (or may not) be slow!")
-#             distances = dionysus.PairwiseDistances(self.points.tolist())
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
-            # We generate Rips complex for higher-dimensional data;
-            # We restrict to 1-skeleton (ie. points & edges)
-            # We restrict all edges to length of 2 as we deal with
-            # STANDARDISED DATA
-            rips.generate(1, 2, self.full_complex.append)
+
+            rips.generate(1, 1, self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
 
@@ -263,11 +260,14 @@ class OutliersModel:
         We save the 0-persistence pairs in the _list_
         self.persistence_pairs.
 
-        persistence_pairs[outlier] contains 4 items:
-        0: 0-persistence pairs for x_filtration
-        1: 0-persistence pairs for x_inv_filtration
-        2: 0-persistence pairs for y_filtration
-        3: 0-persistence pairs for y_inv_filtration
+        persistence_pairs[outlier] contains dictionary with self-explaining
+        keys:
+        x_filtration_H0
+        x_inv_filtration_H0
+        y_filtration_H0
+        y_inv_filtration_H0
+
+        values are arrays of persistance pairs
 
         Based on that we generate scores for hypotheses.
 
@@ -286,11 +286,15 @@ class OutliersModel:
                 self.orig_points.shape[0] - i, self.dimension)
             self.geometric_complex = GeometricComplex(cleaned_points)
 
-            self.persistence_pairs.append([
-                self.geometric_complex.x_filtration.persistence_diagram_0,
-                self.geometric_complex.x_inv_filtration.persistence_diagram_0,
-                self.geometric_complex.y_filtration.persistence_diagram_0,
-                self.geometric_complex.y_inv_filtration.persistence_diagram_0])
+            self.persistence_pairs.append(
+                {"x_filtration_H0":
+                self.geometric_complex.x_filtration.h_0,
+                 "x_inv_filtration_H0":
+                self.geometric_complex.x_inv_filtration.h_0,
+                 "y_filtration_H0":
+                self.geometric_complex.y_filtration.h_0,
+                 "y_inv_filtration_H0":
+                self.geometric_complex.y_inv_filtration.h_0})
 
             self.x_causes_y_scores[i] = max(
                 self.geometric_complex.y_filtration.distance(),
@@ -319,8 +323,8 @@ class Pair:
 
         self.prepare_points()
 
-        # self.all = OutliersModel(self.orig_points, self.outliers_all)
-        # print("all-model scores stability done")
+        self.all = OutliersModel(self.orig_points, self.outliers_all)
+        print("all-model scores stability done")
         self.knn = OutliersModel(self.orig_points, self.outliers_knn)
         print("knn-model scores stability done")
         print(self.name, "done!")
@@ -357,15 +361,18 @@ class Pair:
         self.save_diagrams()
 
     def save_diagrams(self, filename='diagrams'):
+        import json
         file = os.path.join(self.directory, filename+'_knn')
         with open(file, 'w') as f:
-            for line in self.knn.persistence_pairs:
-                f.write(line)
+            json.dump(self.knn.persistence_pairs, f)
+            # for line in self.knn.persistence_pairs:
+            #     f.write(line)
 
         file = os.path.join(self.directory, filename+'_all')
         with open(file, 'w') as f:
-            for line in self.knn.persistence_pairs:
-                f.write(line)
+            json.dump(self.all.persistence_pairs, f)
+#            for line in self.knn.persistence_pairs:
+#                f.write(line)
 
 
     def save_scores(self, filename='scores'):
@@ -408,8 +415,6 @@ def workflow(pair, prefix):
     #         target_directory_list:
     #     print("Scores for", pair, "seem to be already computed")
     #     return 0
-    #
-    #
     # else:
     p = Pair(prefix, pair)
     p.save_scores()
