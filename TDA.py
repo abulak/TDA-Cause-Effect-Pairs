@@ -408,46 +408,49 @@ class Pair:
             plt.close()
 
 
-def workflow(pair, prefix):
+def workflow(prefix, pair):
 
     target_directory_list = os.listdir(os.path.join(os.getcwd(), prefix, pair))
-    # if "scores_knn" in target_directory_list and "scores_all" in \
-    #         target_directory_list:
-    #     print("Scores for", pair, "seem to be already computed")
-    #     return 0
-    # else:
-    p = Pair(prefix, pair)
-    p.save_scores()
-    p.save_diagrams()
-    p.plot_scores()
-    # print('Saving results of', pair, 'done')
+    if "orig_points" in target_directory_list:
+        p = Pair(prefix, pair)
+        p.save_scores()
+        p.save_diagrams()
+    else:
+        print('WE HAVE NOTHING TO DO FOR', pair)
     return 1
 
+
 if __name__ == "__main__":
-
-    print(sys.argv)
-    if len(sys.argv) == 2:
-
-        prefix = sys.argv[1]
-
-        pattern = re.compile('pair[0-9]+$')
-        prefix_path_list= os.listdir(os.path.join(os.getcwd(), prefix))
-        pairs = sorted([x for x in prefix_path_list if pattern.match(
-                x)])
-        # print(pairs)
-
-        # for pair in pairs:
-        #     workflow(pair, prefix)
-
-        import multiprocessing as mproc
-
-        from functools import partial
-        partial_work = partial(workflow, prefix=prefix)
-
-        with mproc.Pool(mproc.cpu_count()) as pool:
-            pool.map(partial_work, pairs)
+    if len(sys.argv) == 3:
+        workflow(sys.argv[1], sys.argv[2])
     else:
-        print("Usage:\n"
-              "TDA_classes_new.py prefix_dir\n"
-              "where prefix_dir is directory with precomputed "
-              "pairs_dirs containing orig_points and outliers")
+        print("Usage: TDA.py $PREFIX $FILENAME")
+
+# if __name__ == "__main__":
+#
+#     print(sys.argv)
+#     if len(sys.argv) == 2:
+#
+#         prefix = sys.argv[1]
+#
+#         pattern = re.compile('pair[0-9]+$')
+#         prefix_path_list= os.listdir(os.path.join(os.getcwd(), prefix))
+#         pairs = sorted([x for x in prefix_path_list if pattern.match(
+#                 x)])
+#         # print(pairs)
+#
+#         # for pair in pairs:
+#         #     workflow(pair, prefix)
+#
+#         import multiprocessing as mproc
+#
+#         from functools import partial
+#         partial_work = partial(workflow, prefix=prefix)
+#
+#         with mproc.Pool(mproc.cpu_count()) as pool:
+#             pool.map(partial_work, pairs)
+#     else:
+#         print("Usage:\n"
+#               "TDA_classes_new.py prefix_dir\n"
+#               "where prefix_dir is directory with precomputed "
+#               "pairs_dirs containing orig_points and outliers")
