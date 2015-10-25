@@ -209,7 +209,13 @@ class GeometricComplex:
         on the axis.
         If inverse is set to true, it returns min value """
 
-        simplex_real_coordinates = self.real_coords(list(simplex.vertices))
+        # this turns out to be much (20?!) faster than list(simplex.vertices)
+        if simplex.dimension() == 0:
+            vert = [next(simplex.vertices)]
+        if simplex.dimension() == 1:
+            vert = [next(simplex.vertices), next(simplex.vertices)]
+
+        simplex_real_coordinates = self.real_coords(vertices=vert)
         simplex_projection = simplex_real_coordinates[:, axis]
 
         if not inverse:
