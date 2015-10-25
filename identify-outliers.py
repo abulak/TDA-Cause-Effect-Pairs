@@ -1,19 +1,14 @@
-from multiprocessing import cpu_count, Pool
-
 import os
 import random
-import re
 import sys
 
 import numpy as np
 import numpy.ma as ma
 
 from sklearn.neighbors import NearestNeighbors
-
 import scipy.spatial as spsp
 
 
-# from subprocess import call
 class DataPair:
 
     """A Class encapsulating everything what we do to the pairs-data
@@ -128,13 +123,9 @@ class DataPair:
         if neighbours == 0 then all other points are taken into the account
         Outliers (their indexes in self.points) are stored in self.outliers"""
 
-        distances_matrix = spsp.distance_matrix(self.points, self.points)
         self.outliers = []
 
-        try:
-            n = int(neighbours)
-        except ValueError:
-            print('find_outliers received non-integer argument:', neighbours)
+        n = int(neighbours)
         if n <= 0:  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
             suffix = 'all'
@@ -143,7 +134,6 @@ class DataPair:
             suffix = 'knn'
         self.save_outliers(suffix=suffix)
         print(self.name + ' Done with outliers!')
-
 
     def save_outliers(self, suffix=''):
         print(self.outliers)
@@ -190,7 +180,6 @@ class DataPair:
                                 '_' + str(suffix) + '.pdf')
         with PdfPages(pdf_file) as pdf:
             new_points = ma.masked_array(self.points)
-            removed_points = []
             for i in range(-1, len(self.outliers)):
                 # print(self.name[-2:0]+"-"+str(i), end=' ', flush=True)
                 plt.figure(figsize=(12, 12))
@@ -240,6 +229,8 @@ def workflow(prefix, filename, size):
         return 1
 
 if __name__ == "__main__":
+
+    random.seed(0)
 
     blacklist = ['pair0023.txt',
                  'pair0033.txt',
