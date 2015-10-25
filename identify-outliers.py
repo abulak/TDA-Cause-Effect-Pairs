@@ -109,8 +109,8 @@ class DataPair:
         distances_vector = ma.masked_array(np.sum(distances_matrix, axis=1))
         for i in range(self.n_of_outliers):
             outlier = distances_vector.argmax()
-            print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
-                  end='; ', flush=True)
+            # print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
+            #       end='; ', flush=True)
             self.outliers.append(outlier)
             distances_vector -= distances_matrix[:, outlier]
             distances_vector[outlier] = ma.masked
@@ -129,7 +129,6 @@ class DataPair:
             self.outliers = self.find_outliers_knn(neighbours)
             suffix = 'knn'
         self.save_outliers(suffix=suffix)
-        print(self.name + ' Done with outliers!')
 
     def save_outliers(self, suffix=''):
         np.savetxt(os.path.join(self.target_dir, "outliers_" + str(suffix)),
@@ -213,7 +212,8 @@ def workflow(prefix, filename, size):
         p.find_outliers(neighbours=2 * int(p.orig_points.shape[0] / 100))
         # if p.dimension == 2:
         #     p.plot_points_pdf(suffix='knn')
-
+        
+        print(self.name + ' Done with outliers!')
         # else:
         #     print(p.name, p.dimension, "is too many to plot!")
         # done_file = os.path.join(prefix_dir, filename[:-4], "done")
