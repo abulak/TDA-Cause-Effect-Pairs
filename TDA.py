@@ -279,8 +279,7 @@ class OutliersModel:
         self.persistence_pairs = []
 
         for i, outlier in enumerate(self.outliers, start=1):
-            print(str(self.outliers.shape[0]-i), end="; ",
-                  flush=True)
+            # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
                 self.orig_points.shape[0] - i, self.dimension)
@@ -288,13 +287,13 @@ class OutliersModel:
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                self.geometric_complex.x_filtration.h_0,
+                    self.geometric_complex.x_filtration.h_0,
                  "x_inv_filtration_H0":
-                self.geometric_complex.x_inv_filtration.h_0,
+                    self.geometric_complex.x_inv_filtration.h_0,
                  "y_filtration_H0":
-                self.geometric_complex.y_filtration.h_0,
+                    self.geometric_complex.y_filtration.h_0,
                  "y_inv_filtration_H0":
-                self.geometric_complex.y_inv_filtration.h_0})
+                    self.geometric_complex.y_inv_filtration.h_0})
 
             self.x_causes_y_scores[i] = max(
                 self.geometric_complex.y_filtration.distance(),
@@ -316,7 +315,6 @@ class Pair:
         if pair_name[-4:] == '.txt':
             pair_name = pair_name[:-4]
         self.name = pair_name
-        print(self.name, end=" ", flush=True)
 
         self.prefix_dir = os.path.join(os.getcwd(), self.prefix)
         self.directory = os.path.join(self.prefix_dir, self.name)
@@ -324,10 +322,9 @@ class Pair:
         self.prepare_points()
 
         self.all = OutliersModel(self.orig_points, self.outliers_all)
-        print("all-model scores stability done")
+        print(self.name, "all-model scores stability done")
         self.knn = OutliersModel(self.orig_points, self.outliers_knn)
-        print("knn-model scores stability done")
-        print(self.name, "done!")
+        print(self.name, "knn-model scores stability done")
 
     def prepare_points(self):
         self.orig_points = np.loadtxt(os.path.join(self.directory,
