@@ -24,8 +24,6 @@ class DataPair:
     """
 
     def __init__(self, filename, prefix, size=2000):
-        print(filename)
-        print(prefix)
         self.filename = filename
         self.name = self.filename[:-4]
         self.prepare_dirs(prefix)
@@ -86,8 +84,8 @@ class DataPair:
         self.outliers = []
 
         for each in range(self.n_of_outliers):
-            print(self.name[-2:] + "::" + str(self.n_of_outliers - each),
-                  end="; ", flush=True)
+            # print(self.name[-2:] + "::" + str(self.n_of_outliers - each),
+            #       end="; ", flush=True)
             distances_partial = distances[:, 1:k_nearest+1]
             distances_vector = distances_partial.sum(1)
             outlier = distances_vector.argmax()
@@ -123,8 +121,6 @@ class DataPair:
         if neighbours == 0 then all other points are taken into the account
         Outliers (their indexes in self.points) are stored in self.outliers"""
 
-        self.outliers = []
-
         n = int(neighbours)
         if n <= 0:  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
@@ -136,7 +132,6 @@ class DataPair:
         print(self.name + ' Done with outliers!')
 
     def save_outliers(self, suffix=''):
-        print(self.outliers)
         np.savetxt(os.path.join(self.target_dir, "outliers_" + str(suffix)),
                    np.asarray(self.outliers, dtype=int), fmt='%d')
 
@@ -221,9 +216,9 @@ def workflow(prefix, filename, size):
 
         # else:
         #     print(p.name, p.dimension, "is too many to plot!")
-        done_file = os.path.join(prefix_dir, filename[:-4], "done")
-        print("Creating file", done_file)
-        os.mknod(done_file)
+        # done_file = os.path.join(prefix_dir, filename[:-4], "done")
+        # print("Creating file", done_file)
+        # os.mknod(done_file)
         return 0
     else:
         return 1
