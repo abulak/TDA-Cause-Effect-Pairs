@@ -2,7 +2,7 @@ ifndef PREFIX
 	PREFIX = test
 endif
 PAIRS_DIR = ./pairs
-PYTHON = /usr/bin/python3
+PYTHON = $(shell which python3)
 
 # TXT_FILES_IN_PAIRS = $(wildcard $(PAIRS_DIR)/*.txt)
 # PAIRS = $(basename $(notdir $(filter-out $(wildcard $(PAIRS_DIR)/*e*), $(TXT_FILES_IN_PAIRS))))
