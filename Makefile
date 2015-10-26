@@ -2,6 +2,7 @@ ifndef PREFIX
 	PREFIX = test
 endif
 PAIRS_DIR = ./pairs
+
 PYTHON = $(shell which python3)
 
 # TXT_FILES_IN_PAIRS = $(wildcard $(PAIRS_DIR)/*.txt)
