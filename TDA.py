@@ -2,7 +2,6 @@ import numpy as np
 import numpy.ma as ma
 import os
 import sys
-import re
 
 import matplotlib
 matplotlib.use('Agg')
@@ -78,6 +77,8 @@ class FilteredComplex:
                     if death > birth:
                         if birth_simplex.dimension() == 0:
                             h0.append([birth, death])
+                    if death < birth:
+                        print("something went totally wrong here!")
                         # if birth_simplex.dimension() == 1:
                         #     h1.append([birth, death])
                     else:
@@ -163,7 +164,7 @@ class GeometricComplex:
             print("Using Rips-complex. This may (or may not) be slow!")
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
-
+            # dim = 1, maximum distance = 1 (i.e. one sigma)
             rips.generate(1, 1, self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
@@ -309,7 +310,7 @@ class OutliersModel:
                 self.geometric_complex.x_inv_filtration.distance())
 
 
-class Pair:
+class CauseEffectPair:
     """
     Encapsulates the whole logical concept behind Cause-Effect Pair.
     I.e. contains, the whole list of outliers, etc.
@@ -321,6 +322,18 @@ class Pair:
         if pair_name[-4:] == '.txt':
             pair_name = pair_name[:-4]
         self.name = pair_name
+        all_pairs_metadata = np.loadtxt(os.path.join(os.getcwd(),
+                                                     'pairs', 'pairmeta.txt'))
+        self.metadata = all_pairs_metadata[int(self.name[-4:]) - 1]
+        # metadata is a list of the form
+        # 0: pair-number,
+        # 1: cause-first-coord, (all starting from one)
+        # 2: cause-last-coord,
+        # 3: effect-first-coord,
+        # 4: effect-last-coord,
+        # 5: weight
+        self.cause = range(self.metadata[1]-1, self.metadata[2])
+        self.effect = range(self.metadata[3]-1, self.metadata[4])
 
         self.prefix_dir = os.path.join(os.getcwd(), self.prefix)
         self.directory = os.path.join(self.prefix_dir, self.name)
@@ -415,7 +428,7 @@ def workflow(prefix, pair):
 
     target_directory_list = os.listdir(os.path.join(os.getcwd(), prefix, pair))
     if "orig_points" in target_directory_list:
-        p = Pair(prefix, pair)
+        p = CauseEffectPair(prefix, pair)
         p.save_scores()
         p.save_diagrams()
     else:
