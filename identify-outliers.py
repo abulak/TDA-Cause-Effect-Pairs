@@ -109,8 +109,8 @@ class DataPair:
         distances_vector = ma.masked_array(np.sum(distances_matrix, axis=1))
         for i in range(self.n_of_outliers):
             outlier = distances_vector.argmax()
-            print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
-                  end='; ', flush=True)
+            # print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
+            #       end='; ', flush=True)
             self.outliers.append(outlier)
             distances_vector -= distances_matrix[:, outlier]
             distances_vector[outlier] = ma.masked
