@@ -163,7 +163,7 @@ class GeometricComplex:
             print("Using Rips-complex. This may (or may not) be slow!")
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
-
+            # dim = 1, maximum distance = 1 (i.e. one sigma)
             rips.generate(1, 1, self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
