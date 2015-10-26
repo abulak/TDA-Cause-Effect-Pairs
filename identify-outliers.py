@@ -163,41 +163,6 @@ class DataPair:
                                 "cleaned_" + self.filename + suffix),
                    compressed_data)
 
-    def plot_points_pdf(self, suffix=''):
-        print("Generating pdf with plots of ", self.name)
-        import matplotlib
-        matplotlib.use('Agg')
-        from matplotlib.backends.backend_pdf import PdfPages
-        import matplotlib.pyplot as plt
-
-        pdf_file = os.path.join(self.target_dir,
-                                self.filename[:-4] +
-                                '_' + str(suffix) + '.pdf')
-        with PdfPages(pdf_file) as pdf:
-            new_points = ma.masked_array(self.points)
-            for i in range(-1, len(self.outliers)):
-                # print(self.name[-2:0]+"-"+str(i), end=' ', flush=True)
-                plt.figure(figsize=(12, 12))
-                if i == -1:
-                    plt.title(self.name)
-                    plt.scatter(self.points[:, 0], self.points[:, 1],
-                                color='black', alpha=0.7, s=15)
-                else:
-                    outlier = self.outliers[i]
-                    removed_points = self.points[self.outliers[:i + 1]]
-                    new_points[outlier] = ma.masked
-                    to_plot = new_points.compressed().reshape(
-                        self.points.shape[0] - i - 1, 2)
-                    plt.figure(figsize=(12, 12))
-                    plt.title(self.name + ", outliers: " + str(i))
-                    plt.scatter(to_plot[:, 0], to_plot[:, 1],
-                                color='black', alpha=0.7, s=15)
-                    plt.scatter(removed_points[:, 0], removed_points[:, 1],
-                                color='red', alpha=0.7, s=15)
-                pdf.savefig()
-                plt.close()
-        print(self.name, "Done pdf!")
-
 
 def workflow(prefix, filename, size):
     prefix_dir = os.path.join(os.getcwd(), prefix)
