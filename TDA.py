@@ -3,7 +3,9 @@ import numpy.ma as ma
 import os
 import sys
 
-sys.path.append("../../../Dionysus-python3/build/bindings/python")
+path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir,
+                                    os.pardir))
+sys.path.append(os.path.join(path, "Dionysus-python3/build/bindings/python"))
 
 
 class FilteredComplex:
@@ -321,9 +323,9 @@ class CauseEffectPair:
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
         self.model = model
-
-        all_pairs_metadata = np.loadtxt(os.path.join(os.getcwd(),
-                                                     'pairs', 'pairmeta.txt'))
+        pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,
+                                                 os.pardir, 'pairs'))
+        all_pairs_metadata = np.loadtxt(os.path.join(pairs_dir, 'pairmeta.txt'))
         self.metadata = all_pairs_metadata[int(self.name[-4:]) - 1]
         # metadata is a list of the form
         # 0: pair-number,
@@ -332,8 +334,8 @@ class CauseEffectPair:
         # 3: effect-first-coord,
         # 4: effect-last-coord,
         # 5: weight
-        self.cause = range(self.metadata[1]-1, self.metadata[2])
-        self.effect = range(self.metadata[3]-1, self.metadata[4])
+        self.cause = range(int(self.metadata[1])-1, int(self.metadata[2]))
+        self.effect = range(int(self.metadata[3])-1, int(self.metadata[4]))
 
         self.prepare_points()
 
