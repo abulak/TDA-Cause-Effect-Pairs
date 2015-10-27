@@ -209,18 +209,16 @@ class GeometricComplex:
         If inverse is set to true, it returns min value """
 
         # this turns out to be much (20?!) faster than list(simplex.vertices)
+        x = simplex.vertices
         if simplex.dimension() == 0:
-            vert = [next(simplex.vertices)]
+            vert = [next(x)]
         elif simplex.dimension() == 1:
-            vert = [next(simplex.vertices), next(simplex.vertices)]
+            vert = [next(x), next(x)]
         else:
             print("There shouldn't be any simplices of dim >1?!")
-            vert = [v for v in simplex.vertices]
-            print(vert)
 
         simplex_real_coordinates = self.real_coords(vertices=vert)
         simplex_projection = simplex_real_coordinates[:, axis]
-
         if not inverse:
             return max(simplex_projection) - self.minimums[axis]
         if inverse:
