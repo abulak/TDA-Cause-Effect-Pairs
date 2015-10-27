@@ -197,7 +197,6 @@ class GeometricComplex:
             weighted_simplices.append(simplex)
         weighted_simplices.sort(key=lambda s: s.data)
         filtered_complex = self.dionysus.Filtration(weighted_simplices)
-        filtered_complex.sort(self.dionysus.data_dim_cmp)
         return filtered_complex
 
     def real_coords(self, vertices):
