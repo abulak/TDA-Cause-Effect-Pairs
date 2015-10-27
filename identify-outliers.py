@@ -25,8 +25,7 @@ class DataPair:
     def __init__(self, model):
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
-        self.points = np.loadtxt(os.path.join(self.current_dir,
-                                                'orig_points'))
+        self.points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
         self.model = model
         self.dimension = self.points[0].shape[0]
 
