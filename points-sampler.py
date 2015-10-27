@@ -22,9 +22,9 @@ def workflow(filename, size=1000):
         orig_points = raw_data
     else:
         indices = np.random.randint(0, raw_data.shape[0], size)
-        orig_points = raw_data[indices]
-        points = standardise(points)
-    np.savetxt(os.path.join(target_dir, 'orig_points'), points)
+        sampled_points = raw_data[indices]
+        std_points = standardise(sampled_points)
+    np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
 
 if __name__ == '__main__':
 

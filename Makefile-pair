@@ -17,13 +17,13 @@ scores_knn diagrams_knn: outliers_knn
 
 scores_all diagrams_all : outliers_all 
 
-outliers_knn: orig_points
+outliers_knn: std_points
 	$(PYTHON) ../../identify-outliers.py "knn"
 
-outliers_all: orig_points
+outliers_all: std_points
 	$(PYTHON) ../../identify-outliers.py "all"
 
-orig_points: 
+std_points: 
 	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE)
 
 print:
