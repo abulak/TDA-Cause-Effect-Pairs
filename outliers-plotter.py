@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 
 import os
+import sys
 
 import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
@@ -20,7 +21,7 @@ class PairOutlierPlotter:
         self.suffix = str(model)
         outliers_path = os.path.join(os.getcwd(), 'outliers_' + self.suffix)
         self.outliers = np.loadtxt(outliers_path, dtype=np.int)
-        self.points = np.loadtxt(os.path.join(os.getcwd(), 'orig_points'))
+        self.points = np.loadtxt(os.path.join(os.getcwd(), 'std_points'))
 
     def plot_outlier(self, i):
         masked_points = ma.masked_array(self.points)
@@ -53,8 +54,13 @@ class PairOutlierPlotter:
                 plt.close()
         print("Done:", self.name, self.suffix)
 
+
+def workflow(model):
+    p = PairOutlierPlotter(model)
+    p.save_plots_pdf()
+
 if __name__ == "__main__":
-    p = PairOutlierPlotter("all")
-    p.save_plots_pdf()
-    p = PairOutlierPlotter("knn")
-    p.save_plots_pdf()
+    if len(sys.argv) == 2:
+        workflow(sys.argv[1])
+    else:
+        print("Usage: outliers-plotter.py $MODEL")
