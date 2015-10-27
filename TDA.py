@@ -63,30 +63,34 @@ class FilteredComplex:
                 birth = birth_simplex.data
                 if i.unpaired():
                     pass
-#                     death = float('inf')
+                    # death = float('inf')
                     # print(birth_simplex.data)
-#                     if birth_simplex.dimension() == 0:
-#                         Inf_life_0.append([birth, death])
-#                     if birth_simplex.dimension() == 1:
-#                         Inf_life_1.append([birth, death])
+                    # if birth_simplex.dimension() == 0:
+                    #     Inf_life_0.append([birth, death])
+                    # elif birth_simplex.dimension() == 1:
+                    #     Inf_life_1.append([birth, death])
+                    # else:
+                    #     print("There should be no simplices of dim >1?!")
+                    #     print(birth_simplex)
                 else:
                     killing_simplex = self.smap[i.pair()]
                     death = killing_simplex.data
                     if death > birth:
                         if birth_simplex.dimension() == 0:
                             h0.append([birth, death])
-                    if death < birth:
-                        print("something went totally wrong here!")
                         # if birth_simplex.dimension() == 1:
                         #     h1.append([birth, death])
+                    elif death < birth:
+                        print("You can not die before You were born!")
+                        print(birth_simplex, birth, killing_simplex, death)
                     else:
                         pass
 
         self.h_0 = h0
         # self.h_1 = h1
-#       self.inf_life_0 = inf_life_0
-#       self.inf_life_1 = inf_life_1
-#         return h0, h1, inf_life_0, inf_life_1
+        # self.inf_life_0 = inf_life_0
+        # self.inf_life_1 = inf_life_1
+        # return h0, h1, inf_life_0, inf_life_1
 
     def create_persistence_diagrams(self):
         if self.h_0:
