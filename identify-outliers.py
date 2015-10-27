@@ -101,11 +101,11 @@ def workflow(model):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 1:
-        print("Usage: identify-outliers.py $MODEL")
-    else:
+    if len(sys.argv) == 2:
         model = sys.argv[1]
         workflow(model)
+    else:
+        print("Usage: identify-outliers.py $MODEL")
 #
 # def main(prefix, size=2000, jobs=1):
 #
