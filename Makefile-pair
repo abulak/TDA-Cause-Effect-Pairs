@@ -11,15 +11,17 @@ PYTHON = $(shell which python3)
 # FILE := pairs-to-process
 # PAIRS := $(basename $(shell cat $(FILE)))
 
-all: orig_points # diagrams_knn diagrams_all
+all: outliers_all outliers_knn # diagrams_knn diagrams_all
 
 scores_knn diagrams_knn: outliers_knn
 
 scores_all diagrams_all : outliers_all 
 
 outliers_knn: orig_points
+	$(PYTHON) ../../identify-outliers.py "knn"
 
 outliers_all: orig_points
+	$(PYTHON) ../../identify-outliers.py "all"
 
 orig_points: 
 	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE)
