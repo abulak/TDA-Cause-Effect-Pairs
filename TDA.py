@@ -2,14 +2,9 @@ import numpy as np
 import numpy.ma as ma
 import os
 import sys
-import re
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pyplot as plt
+sys.path.append("../../../Dionysus-python3/build/bindings/python")
 
-sys.path.append("../Dionysus-python3/build/bindings/python")
 
 class FilteredComplex:
 
@@ -119,7 +114,7 @@ class GeometricComplex:
     y_filtration
     y_inv_filtration
     """
-    dionysus = __import__('dionysus')  # own copy of the not threadsafe library
+    dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
     def __init__(self, cleaned_data):
 
@@ -193,11 +188,12 @@ class GeometricComplex:
         descending when inverse=True"""
         weighted_simplices = []
         for simplex in self.limited_complex:
+            # print(simplex.dimension(), end=" ")
             simplex.data = self.sweep_function(simplex, axis, inverse)
             weighted_simplices.append(simplex)
         weighted_simplices.sort(key=lambda s: s.data)
         filtered_complex = self.dionysus.Filtration(weighted_simplices)
-        # filtered_complex.sort(dionysus.data_dim_cmp)
+        filtered_complex.sort(self.dionysus.data_dim_cmp)
         return filtered_complex
 
     def real_coords(self, vertices):
@@ -212,8 +208,12 @@ class GeometricComplex:
         # this turns out to be much (20?!) faster than list(simplex.vertices)
         if simplex.dimension() == 0:
             vert = [next(simplex.vertices)]
-        if simplex.dimension() == 1:
+        elif simplex.dimension() == 1:
             vert = [next(simplex.vertices), next(simplex.vertices)]
+        else:
+            print("There shouldn't be any simplices of dim >1?!")
+            vert = [v for v in simplex.vertices]
+            print(vert)
 
         simplex_real_coordinates = self.real_coords(vertices=vert)
         simplex_projection = simplex_real_coordinates[:, axis]
@@ -314,33 +314,23 @@ class Pair:
     Encapsulates the whole logical concept behind Cause-Effect Pair.
     I.e. contains, the whole list of outliers, etc.
     """
-    def __init__(self, prefix, pair_name):
-        self.type = type
-        self.prefix = prefix
-
-        if pair_name[-4:] == '.txt':
-            pair_name = pair_name[:-4]
-        self.name = pair_name
-
-        self.prefix_dir = os.path.join(os.getcwd(), self.prefix)
-        self.directory = os.path.join(self.prefix_dir, self.name)
+    def __init__(self, model):
+        self.current_dir = os.getcwd()
+        self.name = self.current_dir[-8:]
+        self.model = model
 
         self.prepare_points()
 
-        self.all = OutliersModel(self.orig_points, self.outliers_all)
-        print(self.name, "all-model scores stability done")
-        self.knn = OutliersModel(self.orig_points, self.outliers_knn)
-        print(self.name, "knn-model scores stability done")
+        self.out = OutliersModel(self.std_points, self.outliers)
+        print(self.name, self.model, "scores stability done")
 
     def prepare_points(self):
-        self.orig_points = np.loadtxt(os.path.join(self.directory,
-                                                   "orig_points"))
-        self.dimension = int(self.orig_points[0].shape[0])
+        self.std_points = np.loadtxt(os.path.join(self.current_dir,
+                                                  "std_points"))
+        self.dimension = int(self.std_points[0].shape[0])
 
-        self.outliers_all = np.loadtxt(os.path.join(self.directory,
-            "outliers_all")).astype(np.int)
-        self.outliers_knn = np.loadtxt(os.path.join(self.directory,
-            "outliers_knn")).astype(np.int)
+        self.outliers = np.loadtxt(os.path.join(self.current_dir,
+                                   "outliers_" + self.model)).astype(np.int)
 
     def save_topological_summary(self):
         """
@@ -363,97 +353,29 @@ class Pair:
         self.save_scores()
         self.save_diagrams()
 
-    def save_diagrams(self, filename='diagrams'):
+    def save_diagrams(self, filename='diagrams_'):
         import json
-        file = os.path.join(self.directory, filename+'_knn')
+        file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
-            json.dump(self.knn.persistence_pairs, f)
+            json.dump(self.out.persistence_pairs, f)
             # for line in self.knn.persistence_pairs:
             #     f.write(line)
 
-        file = os.path.join(self.directory, filename+'_all')
-        with open(file, 'w') as f:
-            json.dump(self.all.persistence_pairs, f)
-#            for line in self.knn.persistence_pairs:
-#                f.write(line)
-
-
-    def save_scores(self, filename='scores'):
-        file = os.path.join(self.directory, filename+'_knn')
-        z = np.zeros((2, self.knn.x_causes_y_scores.shape[0]))
-        z[0, :] = self.knn.x_causes_y_scores
-        z[1, :] = self.knn.y_causes_x_scores
+    def save_scores(self, filename='scores_'):
+        file = os.path.join(self.current_dir, filename + self.model)
+        z = np.zeros((2, self.out.x_causes_y_scores.shape[0]))
+        z[0, :] = self.out.x_causes_y_scores
+        z[1, :] = self.out.y_causes_x_scores
         np.savetxt(file, z)
 
-        file = os.path.join(self.directory, filename+'_all')
-        z = np.zeros((2, self.all.x_causes_y_scores.shape[0]))
-        z[0, :] = self.all.x_causes_y_scores
-        z[1, :] = self.all.y_causes_x_scores
-        np.savetxt(file, z)
 
-    def plot_scores(self):
-        pdf_file = os.path.join(self.directory, 'scores.pdf')
-        with PdfPages(pdf_file) as pdf:
-            plt.figure(figsize=(12, 12))
-            plt.title(self.name+" knn scores")
-            plt.plot(self.knn.x_causes_y_scores, label='x->y')
-            plt.plot(self.knn.y_causes_x_scores, label='y->x')
-            plt.legend()
-            pdf.savefig()
-            plt.close()
-
-            plt.figure(figsize=(12, 12))
-            plt.title(self.name+" all scores")
-            plt.plot(self.all.x_causes_y_scores, label='x->y')
-            plt.plot(self.all.y_causes_x_scores, label='y->x')
-            plt.legend()
-            pdf.savefig()
-            plt.close()
-
-
-def workflow(prefix, pair):
-
-    target_directory_list = os.listdir(os.path.join(os.getcwd(), prefix, pair))
-    if "orig_points" in target_directory_list:
-        p = Pair(prefix, pair)
-        p.save_scores()
-        p.save_diagrams()
-    else:
-        print('WE HAVE NOTHING TO DO FOR', pair)
-    return 1
-
+def workflow(model):
+    p = Pair(model)
+    p.save_scores()
+    p.save_diagrams()
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        workflow(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 2:
+        workflow(sys.argv[1])
     else:
-        print("Usage: TDA.py $PREFIX $FILENAME")
-
-# if __name__ == "__main__":
-#
-#     print(sys.argv)
-#     if len(sys.argv) == 2:
-#
-#         prefix = sys.argv[1]
-#
-#         pattern = re.compile('pair[0-9]+$')
-#         prefix_path_list= os.listdir(os.path.join(os.getcwd(), prefix))
-#         pairs = sorted([x for x in prefix_path_list if pattern.match(
-#                 x)])
-#         # print(pairs)
-#
-#         # for pair in pairs:
-#         #     workflow(pair, prefix)
-#
-#         import multiprocessing as mproc
-#
-#         from functools import partial
-#         partial_work = partial(workflow, prefix=prefix)
-#
-#         with mproc.Pool(mproc.cpu_count()) as pool:
-#             pool.map(partial_work, pairs)
-#     else:
-#         print("Usage:\n"
-#               "TDA_classes_new.py prefix_dir\n"
-#               "where prefix_dir is directory with precomputed "
-#               "pairs_dirs containing orig_points and outliers")
+        print("Usage: TDA.py $MODEL")
