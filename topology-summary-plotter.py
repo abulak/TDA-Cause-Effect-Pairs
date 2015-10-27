@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 
 import os
+import sys
 
 import matplotlib
 # matplotlib.use('Agg')
@@ -18,11 +19,9 @@ class PairTopologyPlotter:
     """
 
     def __init__(self, model):
-
-        os.chdir(os.path.join(os.getcwd(),'test','pair0001'))
         self.name = os.getcwd()[-8:]
         self.suffix = str(model)
-        self.points = np.loadtxt(os.path.join(os.getcwd(), 'orig_points'))
+        self.points = np.loadtxt(os.path.join(os.getcwd(), 'std_points'))
 
         scores_path = os.path.join(os.getcwd(), 'scores_' + self.suffix)
         self.scores = np.loadtxt(scores_path)
@@ -47,16 +46,11 @@ class PairTopologyPlotter:
     def __find_extrema__(self):
         lst = []
         for i in range(self.outliers.shape[0]):
-            masked_points = ma.masked_array(self.points)
-
-            outs = self.outliers[:i+1]
-            masked_points[outs] = ma.masked
-            cleaned_points = masked_points.compressed().reshape(
-                    self.points.shape[0] - i - 1, 2)
-            xmin = np.amin(cleaned_points[:,0])
-            xmax = np.amax(cleaned_points[:,0])
-            ymin = np.amin(cleaned_points[:,1])
-            ymax = np.amax(cleaned_points[:,1])
+            cleaned_points = self.__mask_points__(i)
+            xmin = np.amin(cleaned_points[:, 0])
+            xmax = np.amax(cleaned_points[:, 0])
+            ymin = np.amin(cleaned_points[:, 1])
+            ymax = np.amax(cleaned_points[:, 1])
             lst.append({"x": [xmin, xmax], "y": [ymin, ymax]})
         return lst
 
@@ -80,7 +74,7 @@ class PairTopologyPlotter:
             minimal = self.extrema[i]['y'][0]
             maximal = self.extrema[i]['y'][1]
         plt.plot([minimal, maximal], [minimal, maximal],
-                     color='black', alpha=0.1)
+                 color='black', alpha=0.1)
         points = np.array(self.diagrams[i][filtration])
 
         if points.shape[0]: # if the array is not empty...
@@ -91,43 +85,48 @@ class PairTopologyPlotter:
                 points += [minimal, minimal]
 
             plt.scatter(points[:, 0], points[:, 1],
-                    marker='+', facecolors='none', edgecolors='r')
+                        marker='+', facecolors='none', edgecolors='r')
         plt.title(filtration)
 
     def plot_all_diagrams(self, i):
-        plt.title(self.name + " " + self.suffix + " outlier: " + str(i))
+        if i > len(self.outliers):
+            print("i must be less than", len(self.outliers), "for the pair!")
+        else:
+            plt.title(self.name + " " + self.suffix + " outlier: " + str(i))
 
-        plt.subplot(321)
-        to_plot = self.__mask_points__(i)
-        plt.scatter(to_plot[:, 0], to_plot[:, 1],
-                        color='black', alpha=0.7)
+            plt.subplot(321)
+            to_plot = self.__mask_points__(i)
+            plt.scatter(to_plot[:, 0], to_plot[:, 1],
+                            color='black', alpha=0.7)
 
-        # plt.subplot(322)
+            # plt.subplot(322)
 
-        plt.subplot(323)
-        plt.title("x_filtration_H0")
-        self.plot_diagram(i, filtration="x_filtration_H0", direction='x')
-        plt.subplot(324)
-        plt.title("x_inv_filtration_H0")
-        self.plot_diagram(i, filtration="x_inv_filtration_H0", direction='x')
-        plt.subplot(325)
-        plt.title("y_filtration_H0")
-        self.plot_diagram(i, filtration="y_filtration_H0", direction='y')
-        plt.subplot(326)
-        plt.title("y_inv_filtration_H0")
-        self.plot_diagram(i, filtration="y_inv_filtration_H0", direction='y')
+            plt.subplot(323)
+            plt.title("x_filtration_H0")
+            self.plot_diagram(i, filtration="x_filtration_H0", direction='x')
+            plt.subplot(324)
+            plt.title("x_inv_filtration_H0")
+            self.plot_diagram(i, filtration="x_inv_filtration_H0", direction='x')
+            plt.subplot(325)
+            plt.title("y_filtration_H0")
+            self.plot_diagram(i, filtration="y_filtration_H0", direction='y')
+            plt.subplot(326)
+            plt.title("y_inv_filtration_H0")
+            self.plot_diagram(i, filtration="y_inv_filtration_H0", direction='y')
 
 
-if __name__ == "__main__":
-    pdf_file = os.path.join(os.getcwd(), 'scores.pdf')
+def workflow(model):
+    pdf_file = os.path.join(os.getcwd(), 'scores_' + model + '.pdf')
     with PdfPages(pdf_file) as pdf:
         plt.figure(figsize=(12, 12))
-        p = PairTopologyPlotter("all")
+        p = PairTopologyPlotter(model)
         p.plot_scores()
         pdf.savefig()
         plt.close()
 
-        p = PairTopologyPlotter("knn")
-        p.plot_scores()
-        pdf.savefig()
-        plt.close()
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        workflow(sys.argv[1])
+    else:
+        print("Usage: topology-summary-plotter.py $MODEL")
+
