@@ -19,7 +19,7 @@ def workflow(filename, size=1000):
     os.chdir('../../')
     raw_data = np.loadtxt(os.path.join(os.getcwd(), 'pairs', filename))
     if size < 1 or raw_data.shape[0] < size:
-        orig_points = raw_data
+        std_points = raw_data
     else:
         indices = np.random.randint(0, raw_data.shape[0], size)
         sampled_points = raw_data[indices]
@@ -36,13 +36,14 @@ if __name__ == '__main__':
                  'pair0047.txt',
                  'pair0070.txt']
 
-    if len(sys.argv) < 4:
-        print("Usage: points-sampler.py $FILENAME $SIZE")
-    else:
+    if len(sys.argv) == 3:
         filename = sys.argv[1]
         size = int(sys.argv[2])
         if filename not in blacklist:
             workflow(filename, size)
         else:
             print(filename, "is blacklisted! (it doesn't fit the model?)")
+    else:
+        print("Usage: points-sampler.py $FILENAME $SIZE")
+
 
