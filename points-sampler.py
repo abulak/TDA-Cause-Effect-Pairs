@@ -3,6 +3,7 @@ import random
 import sys
 import os
 
+
 def standardise(points):
     """Standardise self.points, i.e.
     mean = 0 and standard deviation = 1 in both dimensions"""
@@ -14,16 +15,17 @@ def standardise(points):
         p /= std
     return points
 
+
 def workflow(filename, size=1000):
     target_dir = os.path.join(os.getcwd())
     os.chdir('../../')
     raw_data = np.loadtxt(os.path.join(os.getcwd(), 'pairs', filename))
     if size < 1 or raw_data.shape[0] < size:
-        std_points = raw_data
+        points = raw_data
     else:
         indices = np.random.randint(0, raw_data.shape[0], size)
-        sampled_points = raw_data[indices]
-        std_points = standardise(sampled_points)
+        points = raw_data[indices]
+    std_points = standardise(points)
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
 
 if __name__ == '__main__':
