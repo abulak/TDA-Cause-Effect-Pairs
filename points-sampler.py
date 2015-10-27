@@ -3,6 +3,16 @@ import random
 import sys
 import os
 
+def standardise(points):
+    """Standardise self.points, i.e.
+    mean = 0 and standard deviation = 1 in both dimensions"""
+    for i in range(points[0].shape[0]):
+        p = points[:, i]
+        mean = np.mean(p)
+        std = np.std(p)
+        p -= mean
+        p /= std
+    return points
 
 def workflow(filename, size=1000):
     target_dir = os.path.join(os.getcwd())
@@ -13,7 +23,8 @@ def workflow(filename, size=1000):
     else:
         indices = np.random.randint(0, raw_data.shape[0], size)
         orig_points = raw_data[indices]
-    np.savetxt(os.path.join(target_dir, 'orig_points'), orig_points)
+        points = standardise(points)
+    np.savetxt(os.path.join(target_dir, 'orig_points'), points)
 
 if __name__ == '__main__':
 
@@ -28,11 +39,10 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print("Usage: points-sampler.py $FILENAME $SIZE")
     else:
-        prefix = sys.argv[1]
-        filename = sys.argv[2]
-        size = int(sys.argv[3])
+        filename = sys.argv[1]
+        size = int(sys.argv[2])
         if filename not in blacklist:
-            workflow(prefix, filename, size)
+            workflow(filename, size)
         else:
             print(filename, "is blacklisted! (it doesn't fit the model?)")
 
