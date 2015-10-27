@@ -11,12 +11,16 @@ PYTHON = $(shell which python3)
 FILE := pairs-to-process
 PAIRS := $(basename $(shell cat $(FILE)))
 
-all: $(PAIRS)
+allall: knn all
 
 print:
 	@echo $(PAIRS)
 
 .SECONDEXPANSION:
+
+knn: $(addsuffix .knn, $(PAIRS))
+
+all: $(addsuffix .all, $(PAIRS))
 
 $(PAIRS): $$(addsuffix .knn, $$@) $$(addsuffix .all, $$@)
 
