@@ -1,0 +1,40 @@
+# ifndef PREFIX
+# 	PREFIX = test
+# endif
+# PAIRS_DIR = ./pairs
+
+PYTHON = $(shell which python3)
+
+# # TXT_FILES_IN_PAIRS = $(wildcard $(PAIRS_DIR)/*.txt)
+# # PAIRS = $(basename $(notdir $(filter-out $(wildcard $(PAIRS_DIR)/*e*), $(TXT_FILES_IN_PAIRS))))
+# 
+# FILE := pairs-to-process
+# PAIRS := $(basename $(shell cat $(FILE)))
+
+allall: knn all
+
+knn: diagrams_knn 
+
+all: diagrams_all
+
+scores_knn diagrams_knn: outliers_knn
+	$(PYTHON) ../../TDA.py "knn"
+
+scores_all diagrams_all : outliers_all
+	$(PYTHON) ../../TDA.py "all"
+
+outliers_knn: std_points
+	$(PYTHON) ../../identify-outliers.py "knn"
+
+outliers_all: std_points
+	$(PYTHON) ../../identify-outliers.py "all"
+
+std_points: 
+	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE)
+
+print:
+	@echo $(PAIRS)
+.PHONY: clean
+
+clean:
+	rm -rf ./*
