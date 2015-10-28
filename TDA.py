@@ -270,20 +270,6 @@ class OutliersModel:
         self.dimension = self.orig_points[0].shape[0]
         self.outliers = outliers_list
 
-        self.x_causes_y_scores = np.zeros(self.outliers.shape[0]+1)
-        self.y_causes_x_scores = np.zeros(self.outliers.shape[0]+1)
-
-        self.geometric_complex = GeometricComplex(self.orig_points)
-
-        self.x_causes_y_scores[0] = max(
-            self.geometric_complex.y_filtration.distance(),
-            self.geometric_complex.y_inv_filtration.distance()
-            )
-        self.y_causes_x_scores[0] = max(
-            self.geometric_complex.x_filtration.distance(),
-            self.geometric_complex.x_inv_filtration.distance()
-            )
-
         self.compute_topological_summary()
 
     def compute_topological_summary(self):
@@ -303,11 +289,6 @@ class OutliersModel:
         y_inv_filtration_H0
 
         values are arrays of persistance pairs
-
-        Based on that we generate scores for hypotheses.
-
-        In particular the self.x_causes_y_scores and self.y_causes_x_scores
-        are populated by this function.
         """
 
         points_masked = ma.MaskedArray(self.orig_points)
@@ -334,13 +315,6 @@ class OutliersModel:
                     self.geometric_complex.y_filtration.h_0,
                  "y_inv_filtration_H0":
                     self.geometric_complex.y_inv_filtration.h_0})
-
-            self.x_causes_y_scores[i] = max(
-                self.geometric_complex.y_filtration.distance(),
-                self.geometric_complex.y_inv_filtration.distance())
-            self.y_causes_x_scores[i] = max(
-                self.geometric_complex.x_filtration.distance(),
-                self.geometric_complex.x_inv_filtration.distance())
 
 
 class CauseEffectPair:
@@ -383,32 +357,18 @@ class CauseEffectPair:
 
     def save_topological_summary(self):
         """
-        Saves knn and all OutlierModels
-        persistence_pairs to "persistence_pairs_knn" and "persistence_pairs_all"
-        causality_scores to "scores_knn" and "scores_all"
+        Saves $model-OutlierModels persistence_pairs to "diagram_$model"
         located in the pairXXXX directory.
 
-        persistence_pairs is an outlier-indexed list of 4-tuples:
+        persistence_pairs is an outlier-indexed dictionary of 4-tuples:
         0: x_filtration pairs
         1: x_inv_filtration paris
         2: y_filtration pairs
         3: y_inv_filtration pairs
-
-        causality_score is a numpy array of two rows:
-        [0:,] x_causes_y_scores
-        [1:,] y_causes_x_scores
-        is numpy.savetxt-ed.
         """
-        self.save_scores()
+        
         self.save_diagrams()
         self.save_extrema()
-
-    def save_scores(self, filename='scores_'):
-        file = os.path.join(self.current_dir, filename + self.model)
-        z = np.zeros((2, self.out.x_causes_y_scores.shape[0]))
-        z[0, :] = self.out.x_causes_y_scores
-        z[1, :] = self.out.y_causes_x_scores
-        np.savetxt(file, z)
 
     def save_diagrams(self, filename='diagrams_'):
         import json
