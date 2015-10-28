@@ -263,64 +263,10 @@ class GeometricComplex:
             p /= std
 
 
-class OutliersModel:
-
-    def __init__(self, orig_points_list, outliers_list):
-        self.orig_points = orig_points_list
-        self.dimension = self.orig_points[0].shape[0]
-        self.outliers = outliers_list
-
-        self.compute_topological_summary()
-
-    def compute_topological_summary(self):
-        """
-        For each in self.outliers generate cleaned_points. Then construct
-        GeometricComplex(cleaned_points) and compute its persistant 0-th
-        homology.
-
-        We save the 0-persistence pairs in the _list_
-        self.persistence_pairs.
-
-        persistence_pairs[outlier] contains dictionary with self-explaining
-        keys:
-        x_filtration_H0
-        x_inv_filtration_H0
-        y_filtration_H0
-        y_inv_filtration_H0
-
-        values are arrays of persistance pairs
-        """
-
-        points_masked = ma.MaskedArray(self.orig_points)
-        self.persistence_pairs = []
-        self.extrema = []
-        for i, outlier in enumerate(self.outliers, start=1):
-            # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
-            points_masked[outlier] = ma.masked
-            cleaned_points = points_masked.compressed().reshape(
-                self.orig_points.shape[0] - i, self.dimension)
-            self.geometric_complex = GeometricComplex(cleaned_points)
-
-            self.extrema.append({
-                "maxima": self.geometric_complex.maxima,
-                "minima": self.geometric_complex.minima
-                })
-
-            self.persistence_pairs.append(
-                {"x_filtration_H0":
-                    self.geometric_complex.x_filtration.h_0,
-                 "x_inv_filtration_H0":
-                    self.geometric_complex.x_inv_filtration.h_0,
-                 "y_filtration_H0":
-                    self.geometric_complex.y_filtration.h_0,
-                 "y_inv_filtration_H0":
-                    self.geometric_complex.y_inv_filtration.h_0})
-
-
 class CauseEffectPair:
     """
     Encapsulates the whole logical concept behind Cause-Effect Pair.
-    I.e. contains, the whole list of outliers, etc.
+    I.e. contains points, the whole list of outliers, metadata of a pair, etc.
     """
 
     def __init__(self, model):
@@ -343,8 +289,7 @@ class CauseEffectPair:
 
         self.prepare_points()
 
-        self.out = OutliersModel(self.std_points, self.outliers)
-        print(self.name, self.model, "scores stability done")
+        self.compute_topological_summary()
 
     def prepare_points(self):
 
@@ -354,6 +299,50 @@ class CauseEffectPair:
 
         outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
         self.outliers = np.loadtxt(outliers_file).astype(np.int)
+
+    def compute_topological_summary(self):
+        """
+        For each in self.outliers generate cleaned_points. Then construct
+        GeometricComplex(cleaned_points) and compute its persistant 0-th
+        homology.
+
+        We save the 0-persistence pairs in the _list_
+        self.persistence_pairs.
+
+        persistence_pairs[outlier] contains dictionary with self-explaining
+        keys:
+        x_filtration_H0
+        x_inv_filtration_H0
+        y_filtration_H0
+        y_inv_filtration_H0
+
+        values are arrays of persistance pairs
+        """
+
+        points_masked = ma.MaskedArray(self.std_points)
+        self.persistence_pairs = []
+        self.extrema = []
+        for i, outlier in enumerate(self.outliers, start=1):
+            # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
+            points_masked[outlier] = ma.masked
+            cleaned_points = points_masked.compressed().reshape(
+                self.std_points.shape[0] - i, self.dimension)
+            self.geometric_complex = GeometricComplex(cleaned_points)
+
+            self.extrema.append({
+                "maxima": self.geometric_complex.maxima,
+                "minima": self.geometric_complex.minima
+                })
+
+            self.persistence_pairs.append(
+                {"x_filtration_H0":
+                    self.geometric_complex.x_filtration.h_0,
+                 "x_inv_filtration_H0":
+                    self.geometric_complex.x_inv_filtration.h_0,
+                 "y_filtration_H0":
+                    self.geometric_complex.y_filtration.h_0,
+                 "y_inv_filtration_H0":
+                    self.geometric_complex.y_inv_filtration.h_0})
 
     def save_topological_summary(self):
         """
@@ -366,7 +355,7 @@ class CauseEffectPair:
         2: y_filtration pairs
         3: y_inv_filtration pairs
         """
-        
+
         self.save_diagrams()
         self.save_extrema()
 
@@ -374,7 +363,7 @@ class CauseEffectPair:
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
-            json.dump(self.out.persistence_pairs, f)
+            json.dump(self.persistence_pairs, f)
             # for line in self.knn.persistence_pairs:
             #     f.write(line)
 
@@ -382,7 +371,7 @@ class CauseEffectPair:
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
-            json.dump(self.out.extrema, f)
+            json.dump(self.extrema, f)
 
 
 def workflow(model):
