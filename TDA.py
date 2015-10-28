@@ -124,26 +124,27 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data):
+    def __init__(self, cleaned_data, full_initialisation=True):
 
         self.points = cleaned_data
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
-        self.maximums = [np.max(self.points[:, i])
-                         for i in range(self.dimension)]
-        self.minimums = [np.min(self.points[:, i])
-                         for i in range(self.dimension)]
-
+        self.maxima = [np.max(self.points[:, i])
+                       for i in range(self.dimension)]
+        self.minima = [np.min(self.points[:, i])
+                       for i in range(self.dimension)]
         self.__create_full_complex__()
         self.the_alpha = self.compute_the_last_death()
         self.__create_limited_complex__(threshold=self.the_alpha)
-        self.x_filtration = FilteredComplex(self.filtered_complex(0))
-        self.y_filtration = FilteredComplex(self.filtered_complex(1))
-        self.x_inv_filtration = FilteredComplex(
-            self.filtered_complex(0, inverse=True))
-        self.y_inv_filtration = FilteredComplex(
-            self.filtered_complex(1, inverse=True))
+
+        if full_initialisation:
+            self.x_filtration = FilteredComplex(self.filtered_complex(0))
+            self.y_filtration = FilteredComplex(self.filtered_complex(1))
+            self.x_inv_filtration = FilteredComplex(
+                self.filtered_complex(0, inverse=True))
+            self.y_inv_filtration = FilteredComplex(
+                self.filtered_complex(1, inverse=True))
 
     def __create_full_complex__(self):
         """
@@ -242,13 +243,14 @@ class GeometricComplex:
             vert = [next(x), next(x)]
         else:
             print("There shouldn't be any simplices of dim >1?!")
+            vert = [v for v in x]
 
         simplex_real_coordinates = self.real_coords(vertices=vert)
         simplex_projection = simplex_real_coordinates[:, axis]
         if not inverse:
-            return max(simplex_projection) - self.minimums[axis]
+            return max(simplex_projection) - self.minima[axis]
         if inverse:
-            return self.maximums[axis] - min(simplex_projection)
+            return self.maxima[axis] - min(simplex_projection)
 
     def standardise_data(self):
         """Standardise self.points IN-PLACE i.e.
@@ -310,13 +312,18 @@ class OutliersModel:
 
         points_masked = ma.MaskedArray(self.orig_points)
         self.persistence_pairs = []
-
+        self.extrema = []
         for i, outlier in enumerate(self.outliers, start=1):
             # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
                 self.orig_points.shape[0] - i, self.dimension)
             self.geometric_complex = GeometricComplex(cleaned_points)
+
+            self.extrema.append({
+                "maxima": self.geometric_complex.maxima,
+                "minima": self.geometric_complex.minima
+                })
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
@@ -366,12 +373,13 @@ class CauseEffectPair:
         print(self.name, self.model, "scores stability done")
 
     def prepare_points(self):
-        self.std_points = np.loadtxt(os.path.join(self.current_dir,
-                                                  "std_points"))
+
+        std_points_file = os.path.join(self.current_dir, "std_points")
+        self.std_points = np.loadtxt(std_points_file)
         self.dimension = int(self.std_points[0].shape[0])
 
-        self.outliers = np.loadtxt(os.path.join(self.current_dir,
-                                   "outliers_" + self.model)).astype(np.int)
+        outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
+        self.outliers = np.loadtxt(outliers_file).astype(np.int)
 
     def save_topological_summary(self):
         """
@@ -393,6 +401,14 @@ class CauseEffectPair:
         """
         self.save_scores()
         self.save_diagrams()
+        self.save_extrema()
+
+    def save_scores(self, filename='scores_'):
+        file = os.path.join(self.current_dir, filename + self.model)
+        z = np.zeros((2, self.out.x_causes_y_scores.shape[0]))
+        z[0, :] = self.out.x_causes_y_scores
+        z[1, :] = self.out.y_causes_x_scores
+        np.savetxt(file, z)
 
     def save_diagrams(self, filename='diagrams_'):
         import json
@@ -402,18 +418,16 @@ class CauseEffectPair:
             # for line in self.knn.persistence_pairs:
             #     f.write(line)
 
-    def save_scores(self, filename='scores_'):
+    def save_extrema(self, filename='extrema_'):
+        import json
         file = os.path.join(self.current_dir, filename + self.model)
-        z = np.zeros((2, self.out.x_causes_y_scores.shape[0]))
-        z[0, :] = self.out.x_causes_y_scores
-        z[1, :] = self.out.y_causes_x_scores
-        np.savetxt(file, z)
+        with open(file, 'w') as f:
+            json.dump(self.out.extrema, f)
 
 
 def workflow(model):
     p = CauseEffectPair(model)
-    p.save_scores()
-    p.save_diagrams()
+    p.save_topological_summary()
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

@@ -3,14 +3,12 @@ import numpy.ma as ma
 
 import os
 import sys
+import json
 
 import matplotlib
-# matplotlib.use('Agg')
-from matplotlib.backends.backend_pdf import PdfPages
+matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
-
-import json
 
 class PairTopologyPlotter:
     """
@@ -33,7 +31,9 @@ class PairTopologyPlotter:
         outliers_path = os.path.join(os.getcwd(), 'outliers_' + self.suffix)
         self.outliers = np.loadtxt(outliers_path, dtype=np.int)
 
-        self.extrema = self.__find_extrema__()
+        extrema_path = os.path.join(os.getcwd(), 'extrema_' + self.suffix)
+        with open(extrema_path, 'r') as file:
+            self.extrema = json.load(file)
 
     def __mask_points__(self, i):
         masked_points = ma.masked_array(self.points)
