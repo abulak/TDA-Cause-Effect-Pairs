@@ -79,10 +79,10 @@ class OutlierRemoval:
         if neighbours == 0 then all other points are taken into the account
         Outliers (their indexes in self.points) are stored in self.outliers"""
 
-        if model == 'all':  # outlier based on max distance to all others
+        if self.model == 'all':  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
 
-        if model == 'knn':
+        if self.model == 'knn':
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
             self.outliers = self.find_outliers_knn(nearest_neighbours)
 
