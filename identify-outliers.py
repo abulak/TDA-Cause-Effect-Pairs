@@ -8,7 +8,7 @@ from sklearn.neighbors import NearestNeighbors
 import scipy.spatial as spsp
 
 
-class DataPair:
+class OutlierRemoval:
 
     """A Class encapsulating everything what we do to the pairs-data
     string      self.name           file name
@@ -94,7 +94,7 @@ class DataPair:
 
 
 def workflow(model):
-    p = DataPair(model)
+    p = OutlierRemoval(model)
     p.find_outliers()
     p.save_outliers()
 
