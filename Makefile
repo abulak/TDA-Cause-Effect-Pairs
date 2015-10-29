@@ -8,7 +8,8 @@ endif
 
 PYTHON = $(shell which python3)
 
-FILE := pairs-to-process
+# FILE := pairs-to-process
+FILE := multidim-pairs
 PAIRS := $(basename $(shell cat $(FILE)))
 
 allall: knn all
@@ -34,6 +35,9 @@ $(addsuffix .all, $(PAIRS)): prefix
 	cd $(PREFIX)/$(basename $@) &&\
 	$(MAKE) -f ../../Makefile-pair all PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE)
 
+$(addsuffix .dirs, $(PAIRS)): prefix
+	mkdir -p $(PREFIX)/$(basename $@)
+	
 prefix:
 	mkdir -p $(PREFIX)
 
