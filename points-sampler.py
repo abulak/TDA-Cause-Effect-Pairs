@@ -20,11 +20,25 @@ def workflow(filename, size=1000):
     target_dir = os.path.join(os.getcwd())
     os.chdir('../../')
     raw_data = np.loadtxt(os.path.join(os.getcwd(), 'pairs', filename))
+    dimension = raw_data.shape[1]
     if size < 1 or raw_data.shape[0] < size:
         points = raw_data
     else:
         indices = np.random.randint(0, raw_data.shape[0], size)
         points = raw_data[indices]
+
+    for i in range(dimension):
+        column_blacklist = []
+        if np.isnan(np.dot(points[:,i],points[:,i])):
+            column_blacklist.append(i)
+    if column_blacklist:
+        import numpy.ma as ma
+        masked_points = ma.MaskedArray(points)
+        for i in column_blacklist:
+            masked_points[:, i] = ma.masked
+        new_shape = (raw_data.shape[0], raw_data.shape[1]-len(column_blacklist))
+        points = masked_points.compressed().reshape(new_shape)
+
     std_points = standardise(points)
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
 
@@ -47,5 +61,3 @@ if __name__ == '__main__':
             print(filename, "is blacklisted! (it doesn't fit the model?)")
     else:
         print("Usage: points-sampler.py $FILENAME $SIZE")
-
-
