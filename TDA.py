@@ -377,13 +377,13 @@ class CauseEffectPair:
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                    [f.h0 for f in self.geometric_complex.x_filtrations],
+                    [f.h_0 for f in self.geometric_complex.x_filtrations],
                  "x_inv_filtration_H0":
-                    [f.h0 for f in self.geometric_complex.x_inv_filtrations],
+                    [f.h_0 for f in self.geometric_complex.x_inv_filtrations],
                  "y_filtration_H0":
-                    [f.h0 for f in self.geometric_complex.y_filtrations],
+                    [f.h_0 for f in self.geometric_complex.y_filtrations],
                  "y_inv_filtration_H0":
-                    [f.h0 for f in self.geometric_complex.y_inv_filtrations]})
+                    [f.h_0 for f in self.geometric_complex.y_inv_filtrations]})
 
     def save_topological_summary(self):
         """
