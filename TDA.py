@@ -131,6 +131,11 @@ class GeometricComplex:
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
+        if self.dimension <=3:
+            self.complex_model = "alpha"
+        else:
+            self.complex_model = "rips"
+
         self.x_range = x_range
         print("x_range:", [i for i in self.x_range])
         self.y_range = y_range
@@ -176,35 +181,53 @@ class GeometricComplex:
         """
         self.full_complex = self.dionysus.Filtration()
 
-        if self.dimension <= 3:
+        if self.complex_model == "alpha":
             self.dionysus.fill_alpha_complex(self.points.tolist(),
                                              self.full_complex)
-        if self.dimension > 3:
+            one_skeleton = [smpl for smpl in self.full_complex
+                            if smpl.dimension()<=1]
+            self.full_complex = self.dionysus.Filtration(one_skeleton)
+
+        elif self.complex_model == "rips":
             print("Using Rips-complex. This may (or may not) be slow!")
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
             # dim = 1, maximum distance = 1 (i.e. one sigma)
-            rips.generate(1, 1, self.full_complex.append)
+            rips.generate(1, np.sqrt(self.dimension), self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
 
         self.full_complex.sort(self.dionysus.data_dim_cmp)
+        print("Created", self.complex_model, "full complex of size",
+              self.full_complex.__len__())
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
         full_persistence = self.dionysus.StaticPersistence(self.full_complex)
         full_persistence.pair_simplices()
         smap = full_persistence.make_simplex_map(self.full_complex)
-        deaths = [smap[i.pair()].data[0] for i in full_persistence
-                  if smap[i].dimension() == 0]
+        if self.complex_model == 'alpha':
+            deaths = [smap[i.pair()].data[0] for i in full_persistence
+                      if smap[i].dimension() == 0]
+        else:  # self.complex_model == "rips":
+            deaths = [smap[i.pair()].data for i in full_persistence
+                      if smap[i].dimension() == 0]
         return max(deaths)
 
     def __create_limited_complex__(self, threshold):
         """ Creates complex by limiting simplices of self.full_complex
         to those which have data[0] equal or smaller than cutoff"""
-        limited_simplices = [s for s in self.full_complex
-                             if s.data[0] <= threshold and s.dimension() < 2]
+        if self.complex_model == 'alpha':
+            limited_simplices = [s for s in self.full_complex
+                                 if s.data[0] <= threshold
+                                 and s.dimension() < 2]
+        else:  # self.complex_model == "rips":
+            limited_simplices = [s for s in self.full_complex
+                                 if s.data <= threshold]
+        print(threshold)
         self.limited_complex = self.dionysus.Filtration(limited_simplices)
+        print("Created", self.complex_model, "limited complex of size",
+              self.limited_complex.__len__())
 
     def filtered_complex(self, axis, inverse=False):
         """This method is actually a function. Returs filtered
