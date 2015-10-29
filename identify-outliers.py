@@ -29,7 +29,7 @@ class OutlierRemoval:
         self.model = model
         self.dimension = self.points[0].shape[0]
 
-        self.n_of_outliers = 15 * int(self.points.shape[0] / 100)
+        self.n_of_outliers = int(15 * self.points.shape[0] / 100.0)
 
     def find_outliers_knn(self, k_nearest):
 
