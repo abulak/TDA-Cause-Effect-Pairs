@@ -124,27 +124,41 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data, full_initialisation=True):
+    def __init__(self, cleaned_data, x_last=1, y_last=2,
+                 full_initialisation=True):
 
         self.points = cleaned_data
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
+        self.x_range = range(0, x_last)
+        self.y_range = range(x_last, y_last)
+
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
         self.minima = [np.min(self.points[:, i])
                        for i in range(self.dimension)]
+
         self.__create_full_complex__()
         self.the_alpha = self.compute_the_last_death()
         self.__create_limited_complex__(threshold=self.the_alpha)
 
         if full_initialisation:
-            self.x_filtration = FilteredComplex(self.filtered_complex(0))
-            self.y_filtration = FilteredComplex(self.filtered_complex(1))
-            self.x_inv_filtration = FilteredComplex(
-                self.filtered_complex(0, inverse=True))
-            self.y_inv_filtration = FilteredComplex(
-                self.filtered_complex(1, inverse=True))
+            self.x_filtrations = []
+            self.x_inv_filtrations = []
+            for i in self.x_range:
+                self.x_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i)))
+                self.x_inv_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i, inverse=True)))
+
+            self.y_filtrations = []
+            self.y_inv_filtrations = []
+            for i in self.y_range:
+                self.y_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i)))
+                self.y_inv_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i, inverse=True)))
 
     def __create_full_complex__(self):
         """
@@ -284,8 +298,8 @@ class CauseEffectPair:
         # 3: effect-first-coord,
         # 4: effect-last-coord,
         # 5: weight
-        self.cause = range(int(self.metadata[1])-1, int(self.metadata[2]))
-        self.effect = range(int(self.metadata[3])-1, int(self.metadata[4]))
+        self.x_last = int(self.metadata[2])
+        self.y_last = int(self.metadata[4])
 
         self.prepare_points()
 
@@ -327,7 +341,9 @@ class CauseEffectPair:
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
                 self.std_points.shape[0] - i, self.dimension)
-            self.geometric_complex = GeometricComplex(cleaned_points)
+            self.geometric_complex = GeometricComplex(cleaned_points,
+                                                      self.x_last,
+                                                      self.y_last)
 
             self.extrema.append({
                 "maxima": self.geometric_complex.maxima,
@@ -336,13 +352,13 @@ class CauseEffectPair:
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                    self.geometric_complex.x_filtration.h_0,
+                    [f.h0 for f in self.geometric_complex.x_filtrations],
                  "x_inv_filtration_H0":
-                    self.geometric_complex.x_inv_filtration.h_0,
+                    [f.h0 for f in self.geometric_complex.x_inv_filtrations],
                  "y_filtration_H0":
-                    self.geometric_complex.y_filtration.h_0,
+                    [f.h0 for f in self.geometric_complex.y_filtrations],
                  "y_inv_filtration_H0":
-                    self.geometric_complex.y_inv_filtration.h_0})
+                    [f.h0 for f in self.geometric_complex.y_inv_filtrations]})
 
     def save_topological_summary(self):
         """
