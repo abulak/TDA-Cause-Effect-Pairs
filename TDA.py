@@ -124,15 +124,17 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data, x_last=1, y_last=2,
+    def __init__(self, cleaned_data, x_range=range(0,1), y_range=range(1,2),
                  full_initialisation=True):
 
         self.points = cleaned_data
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
-        self.x_range = range(0, x_last)
-        self.y_range = range(x_last, y_last)
+        self.x_range = x_range
+        print("x_range:", [i for i in self.x_range])
+        self.y_range = y_range
+        print("y_range:", [i for i in self.y_range])
 
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
@@ -298,8 +300,8 @@ class CauseEffectPair:
         # 3: effect-first-coord,
         # 4: effect-last-coord,
         # 5: weight
-        self.x_last = int(self.metadata[2])
-        self.y_last = int(self.metadata[4])
+        self.x_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
+        self.y_range = range(int(self.metadata[3])-1, int(self.metadata[4]))
 
         self.prepare_points()
 
@@ -342,8 +344,8 @@ class CauseEffectPair:
             cleaned_points = points_masked.compressed().reshape(
                 self.std_points.shape[0] - i, self.dimension)
             self.geometric_complex = GeometricComplex(cleaned_points,
-                                                      self.x_last,
-                                                      self.y_last)
+                                                      self.x_range,
+                                                      self.y_range)
 
             self.extrema.append({
                 "maxima": self.geometric_complex.maxima,
