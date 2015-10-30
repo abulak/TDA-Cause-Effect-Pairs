@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import os
 import sys
+import logging
 
 path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir,
                                     os.pardir))
@@ -29,11 +30,17 @@ class FilteredComplex:
     def __init__(self, fcomplex):
         self.empty_diagram = self.dionysus.PersistenceDiagram(0)
         self.empty_diagram.append((0, 0))
-
+        logging.debug("Initialising Static Presistence")
         self.persistence = self.dionysus.StaticPersistence(fcomplex)
+
+        logging.debug("Pairing Simplices")
         self.persistence.pair_simplices()
         self.smap = self.persistence.make_simplex_map(fcomplex)
+
+        logging.debug("Computing Persistence Pairs")
         self.compute_persistence_pairs()
+
+        logging.debug("Creating Diagrams")
         self.create_persistence_diagrams()
 
     def distance(self, p=0):
@@ -57,32 +64,46 @@ class FilteredComplex:
         # h1 = []
 #         Inf_life_0 = []
 #         Inf_life_1 = []
+        undying = 0
         for i in self.persistence:
             if i.sign() > 0:
                 birth_simplex = self.smap[i]
                 birth = birth_simplex.data
                 if i.unpaired():
-                    pass
                     # death = float('inf')
-                    # print(birth_simplex.data)
-                    # if birth_simplex.dimension() == 0:
-                    #     Inf_life_0.append([birth, death])
-                    # elif birth_simplex.dimension() == 1:
+
+                    if birth_simplex.dimension() == 0:
+                        # Inf_life_0.append([birth, death])
+                        logging.info("Undying simplex:", birth_simplex,
+                                     birth_simplex.data)
+                        undying += 1
+                        if undying > 1:
+                            logging.warning("The complex seems to be "
+                                            "disconnected?!")
+                    elif birth_simplex.dimension() == 1:
+                        pass
                     #     Inf_life_1.append([birth, death])
-                    # else:
-                    #     print("There should be no simplices of dim >1?!")
-                    #     print(birth_simplex)
+                    else:
+                        logging.warning("There should be no simplices of "
+                                        "dim >1?!")
+                        logging.warning(birth_simplex)
                 else:
                     killing_simplex = self.smap[i.pair()]
                     death = killing_simplex.data
                     if death > birth:
                         if birth_simplex.dimension() == 0:
                             h0.append([birth, death])
-                        # if birth_simplex.dimension() == 1:
+                        elif birth_simplex.dimension() == 1:
+                            pass
                         #     h1.append([birth, death])
+                        else:
+                            logging.warning("There should be no simplices of "
+                                            "dim >1?!")
+                            logging.warning(birth_simplex)
                     elif death < birth:
-                        print("You can not die before You were born!")
-                        print(birth_simplex, birth, killing_simplex, death)
+                        logging.warning("You can not die before You were born!")
+                        logging.warning(birth_simplex, birth,
+                                        killing_simplex, death)
                     else:
                         pass
 
@@ -124,23 +145,26 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data, x_range=range(0,1), y_range=range(1,2),
+    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
                  full_initialisation=True):
 
         self.points = cleaned_data
+        logging.info("Creating GeometricComplex on %d points",
+                     self.points.shape[0])
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
-        if self.dimension <=3:
+        if self.dimension <= 3:
             self.complex_model = "alpha"
         else:
             self.complex_model = "rips"
 
         self.x_range = x_range
-        print("x_range:", [i for i in self.x_range], flush=True, end=' ')
+        logging.info("Variable X range:", " ".join([str(i) for i in
+                                                    self.x_range]))
         self.y_range = y_range
-        print("y_range:", [i for i in self.y_range], flush=True)
-
+        logging.info("Variable Y range:", ",".join([str(i) for i in
+                                                    self.y_range]))
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
         self.minima = [np.min(self.points[:, i])
@@ -154,7 +178,7 @@ class GeometricComplex:
             self.x_filtrations = []
             self.x_inv_filtrations = []
             for i in self.x_range:
-                print("Xrange: Projecting on "+str(i)+"-th axis", flush=True)
+                logging.info("X-variable: Projecting on %d-th axis", i)
                 self.x_filtrations.append(FilteredComplex(
                     self.filtered_complex(i)))
                 self.x_inv_filtrations.append(FilteredComplex(
@@ -163,7 +187,7 @@ class GeometricComplex:
             self.y_filtrations = []
             self.y_inv_filtrations = []
             for i in self.y_range:
-                print("Yrange: Projecting on "+str(i)+"-th axis", flush=True)
+                logging.info("Y-variable: Projecting on %d-th axis", i)
                 self.y_filtrations.append(FilteredComplex(
                     self.filtered_complex(i)))
                 self.y_inv_filtrations.append(FilteredComplex(
@@ -187,11 +211,11 @@ class GeometricComplex:
             self.dionysus.fill_alpha_complex(self.points.tolist(),
                                              self.full_complex)
             one_skeleton = [smpl for smpl in self.full_complex
-                            if smpl.dimension()<=1]
+                            if smpl.dimension() <= 1]
             self.full_complex = self.dionysus.Filtration(one_skeleton)
 
         elif self.complex_model == "rips":
-            print("Using Rips-complex. This may (or may not) be slow!", flush=True)
+            logging.info("Using Rips-complex. This may (or may not) be slow!")
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
             # dim = 1, maximum distance = 1 (i.e. one sigma)
@@ -200,8 +224,8 @@ class GeometricComplex:
                 s.data = rips.eval(s)
 
         self.full_complex.sort(self.dionysus.data_dim_cmp)
-        print("Created", self.complex_model, "full complex of size",
-              self.full_complex.__len__(), flush=True, end=' ')
+        logging.info("Created %s full complex of size %d", self.complex_model,
+                     self.full_complex.__len__())
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
@@ -221,15 +245,14 @@ class GeometricComplex:
         to those which have data[0] equal or smaller than cutoff"""
         if self.complex_model == 'alpha':
             limited_simplices = [s for s in self.full_complex
-                                 if s.data[0] <= threshold
-                                 and s.dimension() < 2]
+                                 if s.data[0] <= threshold and
+                                 s.dimension() < 2]
         else:  # self.complex_model == "rips":
             limited_simplices = [s for s in self.full_complex
                                  if s.data <= threshold]
-        print("with threshold", threshold, flush=True)
         self.limited_complex = self.dionysus.Filtration(limited_simplices)
-        print("Created", self.complex_model, "limited complex of size",
-              self.limited_complex.__len__(), flush=True)
+        logging.info("The threshold %f limits the complex size to "
+                     "%d", threshold, self.limited_complex.__len__())
 
     def filtered_complex(self, axis, inverse=False):
         """This method is actually a function. Returs filtered
@@ -238,7 +261,6 @@ class GeometricComplex:
         descending when inverse=True"""
         weighted_simplices = []
         for simplex in self.limited_complex:
-            # print(simplex.dimension(), end=" ")
             simplex.data = self.sweep_function(simplex, axis, inverse)
             weighted_simplices.append(simplex)
         weighted_simplices.sort(key=lambda s: s.data)
@@ -283,7 +305,7 @@ class GeometricComplex:
         elif simplex.dimension() == 1:
             vert = [next(x), next(x)]
         else:
-            print("There shouldn't be any simplices of dim >1?!")
+            logging.warning("There shouldn't be any simplices of dim >1?!")
             vert = [v for v in x]
 
         simplex_real_coordinates = self.real_coords(vertices=vert)
@@ -313,6 +335,11 @@ class CauseEffectPair:
     def __init__(self, model):
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
+
+        logging.basicConfig(filename=self.name+".log")
+        logging.basicConfig(format='%(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p')
+        logging.info("Starting CauseEffectPair")
         self.model = model
         pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,
                                                  os.pardir, 'pairs'))
@@ -364,8 +391,7 @@ class CauseEffectPair:
         self.persistence_pairs = []
         self.extrema = []
         for i, outlier in enumerate(self.outliers, start=1):
-            print("Outlier:", i, "of", self.outliers.shape[0])
-            # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
+            logging.info("Outlier: %d of %d", i, self.outliers.shape[0])
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
                 self.std_points.shape[0] - i, self.dimension)
