@@ -74,8 +74,8 @@ class FilteredComplex:
 
                     if birth_simplex.dimension() == 0:
                         # Inf_life_0.append([birth, death])
-                        logging.info("Undying simplex:", birth_simplex,
-                                     birth_simplex.data)
+                        logging.debug("Undying simplex: %s at %f",
+                                      birth_simplex, birth_simplex.data)
                         undying += 1
                         if undying > 1:
                             logging.warning("The complex seems to be "
@@ -85,8 +85,8 @@ class FilteredComplex:
                     #     Inf_life_1.append([birth, death])
                     else:
                         logging.warning("There should be no simplices of "
-                                        "dim >1?!")
-                        logging.warning(birth_simplex)
+                                        "dim >1?! but there is: %s",
+                                        birth_simplex)
                 else:
                     killing_simplex = self.smap[i.pair()]
                     death = killing_simplex.data
@@ -98,8 +98,8 @@ class FilteredComplex:
                         #     h1.append([birth, death])
                         else:
                             logging.warning("There should be no simplices of "
-                                            "dim >1?!")
-                            logging.warning(birth_simplex)
+                                            "dim >1?! but there is: %s",
+                                            birth_simplex)
                     elif death < birth:
                         logging.warning("You can not die before You were born!")
                         logging.warning(birth_simplex, birth,
@@ -160,10 +160,10 @@ class GeometricComplex:
             self.complex_model = "rips"
 
         self.x_range = x_range
-        logging.info("Variable X range:", " ".join([str(i) for i in
+        logging.info("Variable X range: %s", " ".join([str(i) for i in
                                                     self.x_range]))
         self.y_range = y_range
-        logging.info("Variable Y range:", ",".join([str(i) for i in
+        logging.info("Variable Y range: %s", " ".join([str(i) for i in
                                                     self.y_range]))
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
@@ -336,9 +336,9 @@ class CauseEffectPair:
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
 
-        logging.basicConfig(filename=self.name+".log")
-        logging.basicConfig(format='%(asctime)s %(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p')
+        logging.basicConfig(filename=self.name+".log", level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
+
         logging.info("Starting CauseEffectPair")
         self.model = model
         pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,

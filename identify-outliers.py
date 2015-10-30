@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import numpy.ma as ma
+import logging
 
 from sklearn.neighbors import NearestNeighbors
 import scipy.spatial as spsp
@@ -25,6 +26,10 @@ class OutlierRemoval:
     def __init__(self, model):
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
+
+        logging.basicConfig(filename=self.name+".log", level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
+
         self.points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
         self.model = model
         self.dimension = self.points[0].shape[0]
@@ -33,17 +38,16 @@ class OutlierRemoval:
 
     def find_outliers_knn(self, k_nearest):
 
-        print("Finding knn", self.n_of_outliers, "outliers in", self.name)
-
+        logging.info("Finding 'knn' %d outliers in %s", self.n_of_outliers,
+                     self.name)
         neigh = NearestNeighbors()
         neigh.fit(self.points)
         distances, indices = neigh.kneighbors(self.points,
                                               k_nearest + self.n_of_outliers)
         self.outliers = []
 
-        for each in range(self.n_of_outliers):
-            # print(self.name[-2:] + "::" + str(self.n_of_outliers - each),
-            #       end="; ", flush=True)
+        for out in range(self.n_of_outliers):
+            logging.debug("%d of %d", self.n_of_outliers, out)
             distances_partial = distances[:, 1:k_nearest+1]
             distances_vector = distances_partial.sum(1)
             outlier = distances_vector.argmax()
@@ -59,16 +63,16 @@ class OutlierRemoval:
 
     def find_outliers_all(self):
 
-        print("Finding all", self.n_of_outliers, "outliers in", self.name)
+        logging.info("Finding 'all' %d outliers in %s", self.n_of_outliers,
+                     self.name)
 
         distances_matrix = spsp.distance_matrix(self.points, self.points)
         self.outliers = []
 
         distances_vector = ma.masked_array(np.sum(distances_matrix, axis=1))
-        for i in range(self.n_of_outliers):
+        for out in range(self.n_of_outliers):
             outlier = distances_vector.argmax()
-            # print(self.name[-2:] + ":" + str(self.n_of_outliers - i),
-            #       end='; ', flush=True)
+            logging.debug("%d of %d", self.n_of_outliers, out)
             self.outliers.append(outlier)
             distances_vector -= distances_matrix[:, outlier]
             distances_vector[outlier] = ma.masked
@@ -86,7 +90,7 @@ class OutlierRemoval:
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
             self.outliers = self.find_outliers_knn(nearest_neighbours)
 
-        print(self.name + ' Done with outliers!')
+        logging.info('Done with outliers!')
 
     def save_outliers(self):
         np.savetxt(os.path.join(self.current_dir, "outliers_" + self.model),
