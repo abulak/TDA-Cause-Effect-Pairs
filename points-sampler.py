@@ -23,6 +23,7 @@ def workflow(filename, size=1000):
     if size < 1 or raw_data.shape[0] < size:
         points = raw_data
     else:
+        np.random.seed(0)
         indices = np.random.randint(0, raw_data.shape[0], size)
         points = raw_data[indices]
     std_points = standardise(points)
