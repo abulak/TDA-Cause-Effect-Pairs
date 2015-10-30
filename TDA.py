@@ -137,9 +137,9 @@ class GeometricComplex:
             self.complex_model = "rips"
 
         self.x_range = x_range
-        print("x_range:", [i for i in self.x_range])
+        print("x_range:", [i for i in self.x_range], flush=True, end=' ')
         self.y_range = y_range
-        print("y_range:", [i for i in self.y_range])
+        print("y_range:", [i for i in self.y_range], flush=True)
 
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
@@ -154,6 +154,7 @@ class GeometricComplex:
             self.x_filtrations = []
             self.x_inv_filtrations = []
             for i in self.x_range:
+                print("Xrange: Projecting on "+str(i)+"-th axis", flush=True)
                 self.x_filtrations.append(FilteredComplex(
                     self.filtered_complex(i)))
                 self.x_inv_filtrations.append(FilteredComplex(
@@ -162,6 +163,7 @@ class GeometricComplex:
             self.y_filtrations = []
             self.y_inv_filtrations = []
             for i in self.y_range:
+                print("Yrange: Projecting on "+str(i)+"-th axis", flush=True)
                 self.y_filtrations.append(FilteredComplex(
                     self.filtered_complex(i)))
                 self.y_inv_filtrations.append(FilteredComplex(
@@ -189,7 +191,7 @@ class GeometricComplex:
             self.full_complex = self.dionysus.Filtration(one_skeleton)
 
         elif self.complex_model == "rips":
-            print("Using Rips-complex. This may (or may not) be slow!")
+            print("Using Rips-complex. This may (or may not) be slow!", flush=True)
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
             # dim = 1, maximum distance = 1 (i.e. one sigma)
@@ -199,7 +201,7 @@ class GeometricComplex:
 
         self.full_complex.sort(self.dionysus.data_dim_cmp)
         print("Created", self.complex_model, "full complex of size",
-              self.full_complex.__len__())
+              self.full_complex.__len__(), flush=True, end=' ')
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
@@ -224,10 +226,10 @@ class GeometricComplex:
         else:  # self.complex_model == "rips":
             limited_simplices = [s for s in self.full_complex
                                  if s.data <= threshold]
-        print(threshold)
+        print("with threshold", threshold, flush=True)
         self.limited_complex = self.dionysus.Filtration(limited_simplices)
         print("Created", self.complex_model, "limited complex of size",
-              self.limited_complex.__len__())
+              self.limited_complex.__len__(), flush=True)
 
     def filtered_complex(self, axis, inverse=False):
         """This method is actually a function. Returs filtered
@@ -362,6 +364,7 @@ class CauseEffectPair:
         self.persistence_pairs = []
         self.extrema = []
         for i, outlier in enumerate(self.outliers, start=1):
+            print("Outlier:", i, "of", self.outliers.shape[0])
             # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
