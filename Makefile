@@ -8,8 +8,9 @@ endif
 
 PYTHON = $(shell which python3)
 
-# FILE := pairs-to-process
-FILE := multidim-pairs
+# FILE := 2d-pairs
+#FILE := multidim-pairs
+FILE := all-pairs
 PAIRS := $(basename $(shell cat $(FILE)))
 
 allall: knn all
