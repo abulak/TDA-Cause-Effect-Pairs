@@ -2,6 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import os
 import sys
+import logging
 
 path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir,
                                     os.pardir))
@@ -29,11 +30,17 @@ class FilteredComplex:
     def __init__(self, fcomplex):
         self.empty_diagram = self.dionysus.PersistenceDiagram(0)
         self.empty_diagram.append((0, 0))
-
+        logging.debug("Initialising Static Presistence")
         self.persistence = self.dionysus.StaticPersistence(fcomplex)
+
+        logging.debug("Pairing Simplices")
         self.persistence.pair_simplices()
         self.smap = self.persistence.make_simplex_map(fcomplex)
+
+        logging.debug("Computing Persistence Pairs")
         self.compute_persistence_pairs()
+
+        logging.debug("Creating Diagrams")
         self.create_persistence_diagrams()
 
     def distance(self, p=0):
@@ -57,32 +64,46 @@ class FilteredComplex:
         # h1 = []
 #         Inf_life_0 = []
 #         Inf_life_1 = []
+        undying = 0
         for i in self.persistence:
             if i.sign() > 0:
                 birth_simplex = self.smap[i]
                 birth = birth_simplex.data
                 if i.unpaired():
-                    pass
                     # death = float('inf')
-                    # print(birth_simplex.data)
-                    # if birth_simplex.dimension() == 0:
-                    #     Inf_life_0.append([birth, death])
-                    # elif birth_simplex.dimension() == 1:
+
+                    if birth_simplex.dimension() == 0:
+                        # Inf_life_0.append([birth, death])
+                        logging.debug("Undying simplex: %s at %f",
+                                      birth_simplex, birth_simplex.data)
+                        undying += 1
+                        if undying > 1:
+                            logging.warning("The complex seems to be "
+                                            "disconnected?!")
+                    elif birth_simplex.dimension() == 1:
+                        pass
                     #     Inf_life_1.append([birth, death])
-                    # else:
-                    #     print("There should be no simplices of dim >1?!")
-                    #     print(birth_simplex)
+                    else:
+                        logging.warning("There should be no simplices of "
+                                        "dim >1?! but there is: %s",
+                                        birth_simplex)
                 else:
                     killing_simplex = self.smap[i.pair()]
                     death = killing_simplex.data
                     if death > birth:
                         if birth_simplex.dimension() == 0:
                             h0.append([birth, death])
-                        # if birth_simplex.dimension() == 1:
+                        elif birth_simplex.dimension() == 1:
+                            pass
                         #     h1.append([birth, death])
+                        else:
+                            logging.warning("There should be no simplices of "
+                                            "dim >1?! but there is: %s",
+                                            birth_simplex)
                     elif death < birth:
-                        print("You can not die before You were born!")
-                        print(birth_simplex, birth, killing_simplex, death)
+                        logging.warning("You can not die before You were born!")
+                        logging.warning(birth_simplex, birth,
+                                        killing_simplex, death)
                     else:
                         pass
 
@@ -124,27 +145,53 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data, full_initialisation=True):
+    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
+                 full_initialisation=True):
 
         self.points = cleaned_data
+        logging.info("Creating GeometricComplex on %d points",
+                     self.points.shape[0])
         self.dimension = self.points[0].shape[0]
         self.standardise_data()
 
+        if self.dimension <= 3:
+            self.complex_model = "alpha"
+        else:
+            self.complex_model = "rips"
+
+        self.x_range = x_range
+        logging.info("Variable X range: %s", " ".join([str(i) for i in
+                                                    self.x_range]))
+        self.y_range = y_range
+        logging.info("Variable Y range: %s", " ".join([str(i) for i in
+                                                    self.y_range]))
         self.maxima = [np.max(self.points[:, i])
                        for i in range(self.dimension)]
         self.minima = [np.min(self.points[:, i])
                        for i in range(self.dimension)]
+
         self.__create_full_complex__()
         self.the_alpha = self.compute_the_last_death()
         self.__create_limited_complex__(threshold=self.the_alpha)
 
         if full_initialisation:
-            self.x_filtration = FilteredComplex(self.filtered_complex(0))
-            self.y_filtration = FilteredComplex(self.filtered_complex(1))
-            self.x_inv_filtration = FilteredComplex(
-                self.filtered_complex(0, inverse=True))
-            self.y_inv_filtration = FilteredComplex(
-                self.filtered_complex(1, inverse=True))
+            self.x_filtrations = []
+            self.x_inv_filtrations = []
+            for i in self.x_range:
+                logging.info("X-variable: Projecting on %d-th axis", i)
+                self.x_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i)))
+                self.x_inv_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i, inverse=True)))
+
+            self.y_filtrations = []
+            self.y_inv_filtrations = []
+            for i in self.y_range:
+                logging.info("Y-variable: Projecting on %d-th axis", i)
+                self.y_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i)))
+                self.y_inv_filtrations.append(FilteredComplex(
+                    self.filtered_complex(i, inverse=True)))
 
     def __create_full_complex__(self):
         """
@@ -160,35 +207,52 @@ class GeometricComplex:
         """
         self.full_complex = self.dionysus.Filtration()
 
-        if self.dimension <= 3:
+        if self.complex_model == "alpha":
             self.dionysus.fill_alpha_complex(self.points.tolist(),
                                              self.full_complex)
-        if self.dimension > 3:
-            print("Using Rips-complex. This may (or may not) be slow!")
+            one_skeleton = [smpl for smpl in self.full_complex
+                            if smpl.dimension() <= 1]
+            self.full_complex = self.dionysus.Filtration(one_skeleton)
+
+        elif self.complex_model == "rips":
+            logging.info("Using Rips-complex. This may (or may not) be slow!")
             distances = self.dionysus.PairwiseDistances(self.points.tolist())
             rips = self.dionysus.Rips(distances)
             # dim = 1, maximum distance = 1 (i.e. one sigma)
-            rips.generate(1, 1, self.full_complex.append)
+            rips.generate(1, np.sqrt(self.dimension), self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
 
         self.full_complex.sort(self.dionysus.data_dim_cmp)
+        logging.info("Created %s full complex of size %d", self.complex_model,
+                     self.full_complex.__len__())
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
         full_persistence = self.dionysus.StaticPersistence(self.full_complex)
         full_persistence.pair_simplices()
         smap = full_persistence.make_simplex_map(self.full_complex)
-        deaths = [smap[i.pair()].data[0] for i in full_persistence
-                  if smap[i].dimension() == 0]
+        if self.complex_model == 'alpha':
+            deaths = [smap[i.pair()].data[0] for i in full_persistence
+                      if smap[i].dimension() == 0]
+        else:  # self.complex_model == "rips":
+            deaths = [smap[i.pair()].data for i in full_persistence
+                      if smap[i].dimension() == 0]
         return max(deaths)
 
     def __create_limited_complex__(self, threshold):
         """ Creates complex by limiting simplices of self.full_complex
         to those which have data[0] equal or smaller than cutoff"""
-        limited_simplices = [s for s in self.full_complex
-                             if s.data[0] <= threshold and s.dimension() < 2]
+        if self.complex_model == 'alpha':
+            limited_simplices = [s for s in self.full_complex
+                                 if s.data[0] <= threshold and
+                                 s.dimension() < 2]
+        else:  # self.complex_model == "rips":
+            limited_simplices = [s for s in self.full_complex
+                                 if s.data <= threshold]
         self.limited_complex = self.dionysus.Filtration(limited_simplices)
+        logging.info("The threshold %f limits the complex size to "
+                     "%d", threshold, self.limited_complex.__len__())
 
     def filtered_complex(self, axis, inverse=False):
         """This method is actually a function. Returs filtered
@@ -197,7 +261,6 @@ class GeometricComplex:
         descending when inverse=True"""
         weighted_simplices = []
         for simplex in self.limited_complex:
-            # print(simplex.dimension(), end=" ")
             simplex.data = self.sweep_function(simplex, axis, inverse)
             weighted_simplices.append(simplex)
         weighted_simplices.sort(key=lambda s: s.data)
@@ -242,7 +305,7 @@ class GeometricComplex:
         elif simplex.dimension() == 1:
             vert = [next(x), next(x)]
         else:
-            print("There shouldn't be any simplices of dim >1?!")
+            logging.warning("There shouldn't be any simplices of dim >1?!")
             vert = [v for v in x]
 
         simplex_real_coordinates = self.real_coords(vertices=vert)
@@ -263,28 +326,47 @@ class GeometricComplex:
             p /= std
 
 
-class OutliersModel:
+class CauseEffectPair:
+    """
+    Encapsulates the whole logical concept behind Cause-Effect Pair.
+    I.e. contains points, the whole list of outliers, metadata of a pair, etc.
+    """
 
-    def __init__(self, orig_points_list, outliers_list):
-        self.orig_points = orig_points_list
-        self.dimension = self.orig_points[0].shape[0]
-        self.outliers = outliers_list
+    def __init__(self, model):
+        self.current_dir = os.getcwd()
+        self.name = self.current_dir[-8:]
 
-        self.x_causes_y_scores = np.zeros(self.outliers.shape[0]+1)
-        self.y_causes_x_scores = np.zeros(self.outliers.shape[0]+1)
+        logging.basicConfig(filename=self.name+".log", level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
-        self.geometric_complex = GeometricComplex(self.orig_points)
+        logging.info("Starting CauseEffectPair")
+        self.model = model
+        pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,
+                                                 os.pardir, 'pairs'))
+        all_pairs_metadata = np.loadtxt(os.path.join(pairs_dir, 'pairmeta.txt'))
+        self.metadata = all_pairs_metadata[int(self.name[-4:]) - 1]
+        # metadata is a list of the form
+        # 0: pair-number,
+        # 1: cause-first-coord, (all starting from one)
+        # 2: cause-last-coord,
+        # 3: effect-first-coord,
+        # 4: effect-last-coord,
+        # 5: weight
+        self.x_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
+        self.y_range = range(int(self.metadata[3])-1, int(self.metadata[4]))
 
-        self.x_causes_y_scores[0] = max(
-            self.geometric_complex.y_filtration.distance(),
-            self.geometric_complex.y_inv_filtration.distance()
-            )
-        self.y_causes_x_scores[0] = max(
-            self.geometric_complex.x_filtration.distance(),
-            self.geometric_complex.x_inv_filtration.distance()
-            )
+        self.prepare_points()
 
         self.compute_topological_summary()
+
+    def prepare_points(self):
+
+        std_points_file = os.path.join(self.current_dir, "std_points")
+        self.std_points = np.loadtxt(std_points_file)
+        self.dimension = int(self.std_points[0].shape[0])
+
+        outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
+        self.outliers = np.loadtxt(outliers_file).astype(np.int)
 
     def compute_topological_summary(self):
         """
@@ -303,22 +385,19 @@ class OutliersModel:
         y_inv_filtration_H0
 
         values are arrays of persistance pairs
-
-        Based on that we generate scores for hypotheses.
-
-        In particular the self.x_causes_y_scores and self.y_causes_x_scores
-        are populated by this function.
         """
 
-        points_masked = ma.MaskedArray(self.orig_points)
+        points_masked = ma.MaskedArray(self.std_points)
         self.persistence_pairs = []
         self.extrema = []
         for i, outlier in enumerate(self.outliers, start=1):
-            # print(str(self.outliers.shape[0]-i), end="; ", flush=True)
+            logging.info("Outlier: %d of %d", i, self.outliers.shape[0])
             points_masked[outlier] = ma.masked
             cleaned_points = points_masked.compressed().reshape(
-                self.orig_points.shape[0] - i, self.dimension)
-            self.geometric_complex = GeometricComplex(cleaned_points)
+                self.std_points.shape[0] - i, self.dimension)
+            self.geometric_complex = GeometricComplex(cleaned_points,
+                                                      self.x_range,
+                                                      self.y_range)
 
             self.extrema.append({
                 "maxima": self.geometric_complex.maxima,
@@ -327,94 +406,34 @@ class OutliersModel:
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                    self.geometric_complex.x_filtration.h_0,
+                    [f.h_0 for f in self.geometric_complex.x_filtrations],
                  "x_inv_filtration_H0":
-                    self.geometric_complex.x_inv_filtration.h_0,
+                    [f.h_0 for f in self.geometric_complex.x_inv_filtrations],
                  "y_filtration_H0":
-                    self.geometric_complex.y_filtration.h_0,
+                    [f.h_0 for f in self.geometric_complex.y_filtrations],
                  "y_inv_filtration_H0":
-                    self.geometric_complex.y_inv_filtration.h_0})
-
-            self.x_causes_y_scores[i] = max(
-                self.geometric_complex.y_filtration.distance(),
-                self.geometric_complex.y_inv_filtration.distance())
-            self.y_causes_x_scores[i] = max(
-                self.geometric_complex.x_filtration.distance(),
-                self.geometric_complex.x_inv_filtration.distance())
-
-
-class CauseEffectPair:
-    """
-    Encapsulates the whole logical concept behind Cause-Effect Pair.
-    I.e. contains, the whole list of outliers, etc.
-    """
-
-    def __init__(self, model):
-        self.current_dir = os.getcwd()
-        self.name = self.current_dir[-8:]
-        self.model = model
-        pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,
-                                                 os.pardir, 'pairs'))
-        all_pairs_metadata = np.loadtxt(os.path.join(pairs_dir, 'pairmeta.txt'))
-        self.metadata = all_pairs_metadata[int(self.name[-4:]) - 1]
-        # metadata is a list of the form
-        # 0: pair-number,
-        # 1: cause-first-coord, (all starting from one)
-        # 2: cause-last-coord,
-        # 3: effect-first-coord,
-        # 4: effect-last-coord,
-        # 5: weight
-        self.cause = range(int(self.metadata[1])-1, int(self.metadata[2]))
-        self.effect = range(int(self.metadata[3])-1, int(self.metadata[4]))
-
-        self.prepare_points()
-
-        self.out = OutliersModel(self.std_points, self.outliers)
-        print(self.name, self.model, "scores stability done")
-
-    def prepare_points(self):
-
-        std_points_file = os.path.join(self.current_dir, "std_points")
-        self.std_points = np.loadtxt(std_points_file)
-        self.dimension = int(self.std_points[0].shape[0])
-
-        outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
-        self.outliers = np.loadtxt(outliers_file).astype(np.int)
+                    [f.h_0 for f in self.geometric_complex.y_inv_filtrations]})
 
     def save_topological_summary(self):
         """
-        Saves knn and all OutlierModels
-        persistence_pairs to "persistence_pairs_knn" and "persistence_pairs_all"
-        causality_scores to "scores_knn" and "scores_all"
+        Saves $model-OutlierModels persistence_pairs to "diagram_$model"
         located in the pairXXXX directory.
 
-        persistence_pairs is an outlier-indexed list of 4-tuples:
+        persistence_pairs is an outlier-indexed dictionary of 4-tuples:
         0: x_filtration pairs
         1: x_inv_filtration paris
         2: y_filtration pairs
         3: y_inv_filtration pairs
-
-        causality_score is a numpy array of two rows:
-        [0:,] x_causes_y_scores
-        [1:,] y_causes_x_scores
-        is numpy.savetxt-ed.
         """
-        self.save_scores()
+
         self.save_diagrams()
         self.save_extrema()
-
-    def save_scores(self, filename='scores_'):
-        file = os.path.join(self.current_dir, filename + self.model)
-        z = np.zeros((2, self.out.x_causes_y_scores.shape[0]))
-        z[0, :] = self.out.x_causes_y_scores
-        z[1, :] = self.out.y_causes_x_scores
-        np.savetxt(file, z)
 
     def save_diagrams(self, filename='diagrams_'):
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
-            json.dump(self.out.persistence_pairs, f)
+            json.dump(self.persistence_pairs, f)
             # for line in self.knn.persistence_pairs:
             #     f.write(line)
 
@@ -422,7 +441,7 @@ class CauseEffectPair:
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
-            json.dump(self.out.extrema, f)
+            json.dump(self.extrema, f)
 
 
 def workflow(model):

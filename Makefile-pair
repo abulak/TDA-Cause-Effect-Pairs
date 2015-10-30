@@ -5,12 +5,6 @@
 
 PYTHON = $(shell which python3)
 
-# # TXT_FILES_IN_PAIRS = $(wildcard $(PAIRS_DIR)/*.txt)
-# # PAIRS = $(basename $(notdir $(filter-out $(wildcard $(PAIRS_DIR)/*e*), $(TXT_FILES_IN_PAIRS))))
-# 
-# FILE := pairs-to-process
-# PAIRS := $(basename $(shell cat $(FILE)))
-
 allall: knn all
 
 knn: diagrams_knn 
