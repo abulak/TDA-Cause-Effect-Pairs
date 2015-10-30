@@ -130,6 +130,19 @@ class FilteredComplex:
 #             self.persistence_diagram_1 = self.empty_diagram
 
 
+class Distances:
+    """
+    Class representing Dionysus distances for use in the Rips filtration
+    """
+    def __init__(self, points):
+        self.points = points
+        from scipy.spatial import distance_matrix
+        self.distances = distance_matrix(self.points, self.points)
+
+    def __call__(self, p1, p2):
+        return self.distances[p1][p2]
+
+
 class GeometricComplex:
 
     """Class abstracting geometric complex on a given set of points in R^d.
