@@ -136,8 +136,11 @@ class Distances:
     """
     def __init__(self, points):
         self.points = points
-        from scipy.spatial import distance_matrix
-        self.distances = distance_matrix(self.points, self.points)
+        from scipy.spatial.distance import cdist
+        self.distances = cdist(self.points, self.points)
+
+    def __len__(self):
+        return self.points.shape[0]
 
     def __call__(self, p1, p2):
         return self.distances[p1][p2]
