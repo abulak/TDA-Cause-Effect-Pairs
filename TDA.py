@@ -136,8 +136,11 @@ class Distances:
     """
     def __init__(self, points):
         self.points = points
-        from scipy.spatial import distance_matrix
-        self.distances = distance_matrix(self.points, self.points)
+        from scipy.spatial.distance import cdist
+        self.distances = cdist(self.points, self.points)
+
+    def __len__(self):
+        return self.points.shape[0]
 
     def __call__(self, p1, p2):
         return self.distances[p1][p2]
@@ -206,7 +209,7 @@ class GeometricComplex:
                 self.y_inv_filtrations.append(FilteredComplex(
                     self.filtered_complex(i, inverse=True)))
 
-    def __create_full_complex__(self):
+    def __create_full_complex__(self, radius=-1):
         """
         Creates the full complex (i.e. dionysus object) on the self.points.
         Depending on the dimension n of the points it may be alpha-complex
@@ -228,11 +231,17 @@ class GeometricComplex:
             self.full_complex = self.dionysus.Filtration(one_skeleton)
 
         elif self.complex_model == "rips":
-            logging.info("Using Rips-complex. This may (or may not) be slow!")
-            distances = self.dionysus.PairwiseDistances(self.points.tolist())
+            if radius == -1:
+                radius = np.sqrt(self.dimension)
+            logging.info("Using Rips-complex with radius %f. This may be slow "
+                         "for dense sets!", radius)
+            #distances = self.dionysus.PairwiseDistances(self.points.tolist())
+            distances = Distances(self.points)
             rips = self.dionysus.Rips(distances)
-            # dim = 1, maximum distance = 1 (i.e. one sigma)
-            rips.generate(1, np.sqrt(self.dimension), self.full_complex.append)
+            # dim = 1, maximum distance = sqrt(self.dimension)
+            # (i.e. the longest diagonal of a cube of edge=sigma)
+
+            rips.generate(1, radius, self.full_complex.append)
             for s in self.full_complex:
                 s.data = rips.eval(s)
 
@@ -349,8 +358,8 @@ class CauseEffectPair:
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
 
-        logging.basicConfig(filename=self.name+".log", level=logging.INFO,
-                            format='%(asctime)s - %(levelname)s - %(message)s')
+        # logging.basicConfig(filename=self.name+".log", level=logging.INFO,
+        #                     format='%(asctime)s - %(levelname)s - %(message)s')
 
         logging.info("Starting CauseEffectPair")
         self.model = model
