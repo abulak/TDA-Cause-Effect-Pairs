@@ -232,7 +232,7 @@ class GeometricComplex:
 
         elif self.complex_model == "rips":
             if radius == -1:
-                radius = np.sqrt(self.dimension)
+                radius = 2 * np.sqrt(self.dimension)
             logging.info("Using Rips-complex with radius %f. This may be slow "
                          "for dense sets!", radius)
             #distances = self.dionysus.PairwiseDistances(self.points.tolist())
