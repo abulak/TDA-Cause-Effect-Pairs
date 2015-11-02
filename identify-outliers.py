@@ -47,7 +47,7 @@ class OutlierRemoval:
         self.outliers = []
 
         for out in range(self.n_of_outliers):
-            logging.debug("%d of %d", self.n_of_outliers, out)
+            logging.debug("%d of %d", out, self.n_of_outliers)
             distances_partial = distances[:, 1:k_nearest+1]
             distances_vector = distances_partial.sum(1)
             outlier = distances_vector.argmax()
