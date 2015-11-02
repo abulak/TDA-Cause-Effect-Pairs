@@ -58,22 +58,21 @@ class FilteredComplex:
                 self.persistence_diagram_0, self.empty_diagram)
 
     def compute_persistence_pairs(self):
-        """ Computes the persistence pairs for the filered complex
-        (-1 as death stands for infty)"""
+        """ Computes the persistence pairs for the filered complex"""
         h0 = []
+        inf_life_0 = []
         # h1 = []
-#         Inf_life_0 = []
-#         Inf_life_1 = []
+        # Inf_life_1 = []
         undying = 0
         for i in self.persistence:
             if i.sign() > 0:
                 birth_simplex = self.smap[i]
                 birth = birth_simplex.data
                 if i.unpaired():
-                    # death = float('inf')
+                    death = float('inf')
 
                     if birth_simplex.dimension() == 0:
-                        # Inf_life_0.append([birth, death])
+                        inf_life_0.append([birth, death])
                         logging.debug("Undying simplex: %s at %f",
                                       birth_simplex, birth_simplex.data)
                         undying += 1
@@ -109,7 +108,7 @@ class FilteredComplex:
 
         self.h_0 = h0
         # self.h_1 = h1
-        # self.inf_life_0 = inf_life_0
+        self.inf_life_0 = inf_life_0
         # self.inf_life_1 = inf_life_1
         # return h0, h1, inf_life_0, inf_life_1
 
