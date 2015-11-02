@@ -192,7 +192,7 @@ class GeometricComplex:
                 self.y_inv_filtrations.append(FilteredComplex(
                     self.filtered_complex(i, inverse=True)))
 
-    def __create_full_complex__(self, radius=-1):
+    def __create_full_complex__(self, radius):
         """
         Creates the full complex (i.e. dionysus object) on the self.points.
         Depending on the dimension n of the points it may be alpha-complex
@@ -214,8 +214,6 @@ class GeometricComplex:
             self.full_complex = self.dionysus.Filtration(one_skeleton)
 
         elif self.complex_model == "rips":
-            if radius == -1:
-                radius = 2 * np.sqrt(self.dimension)
             logging.info("Using Rips-complex with radius %f. This may be slow "
                          "for dense sets!", radius)
 
