@@ -219,18 +219,8 @@ class GeometricComplex:
                 radius = 2 * np.sqrt(self.dimension)
             logging.info("Using Rips-complex with radius %f. This may be slow "
                          "for dense sets!", radius)
-            #distances = self.dionysus.PairwiseDistances(self.points.tolist())
-            distances = Distances(self.points)
 
-            self.full_complex = self.construct_rips_graph(self.points, radius)
-
-            # rips = self.dionysus.Rips(distances)
-            # dim = 1, maximum distance = sqrt(self.dimension)
-            # (i.e. the longest diagonal of a cube of edge=sigma)
-
-            # rips.generate(1, radius, self.full_complex.append)
-            # for s in self.full_complex:
-            #     s.data = rips.eval(s)
+            self.full_complex = self.exact_rips_graph(radius)
 
         self.full_complex.sort(self.dionysus.data_dim_cmp)
         logging.info("Created %s full complex of size %d", self.complex_model,
@@ -247,12 +237,12 @@ class GeometricComplex:
         simplices = []
         for i in range(self.points.shape[0]):
             simplices.append(self.dionysus.Simplex([i], 0))
-            for j in range(points.shape[0]):
-                if j != i and distances[i][j] < radius:
-                    simplices.append(self.dionysus.Simplex([i, j], distances[i][
-                        j]))
-        rips = self.dionysus.Filtration(simplices)
-        return rips
+            for j in range(self.points.shape[0]):
+                d = distances[i][j]
+                if j != i and d < radius:
+                    simplices.append(self.dionysus.Simplex([i, j], d))
+        full_complex = self.dionysus.Filtration(simplices)
+        return full_complex
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
