@@ -148,6 +148,7 @@ class GeometricComplex:
                  full_initialisation=True):
 
         self.points = cleaned_data
+        self.points_list = cleaned_data.tolist()
         logging.info("Creating GeometricComplex on %d points",
                      self.points.shape[0])
         self.dimension = self.points[0].shape[0]
@@ -168,9 +169,8 @@ class GeometricComplex:
                        for i in range(self.dimension)]
         self.minima = [np.min(self.points[:, i])
                        for i in range(self.dimension)]
-        self.full_complex = self.create_full_complex(
-            radius=np.sqrt(self.dimension))
-        self.the_cutoff = self.compute_the_last_death()
+
+        self.the_cutoff = self.compute_the_last_death2(np.sqrt(self.dimension))
 
         self.limited_complex = self.create_limited_complex(
             threshold=self.the_cutoff)
@@ -247,6 +247,21 @@ class GeometricComplex:
         full_complex = self.dionysus.Filtration(simplices)
         return full_complex
 
+    def compute_the_last_death2(self, radius):
+        """finds the minimal filtration s.t. the full_complex is connected"""
+        self.full_complex = self.create_full_complex(radius=radius)
+        z = FilteredComplex(self.full_complex)
+        connected = False
+        while not connected:
+            if len(z.inf_life_0) > 1:
+                logging.warning("The complex seems to be disconected, doubling "
+                                "the threshold")
+                self.full_complex = self.create_full_complex(2 * radius)
+            else:
+                connected = True
+        deaths = [x[1] for x in z.h_0]
+        return max(deaths)
+
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected"""
         full_persistence = self.dionysus.StaticPersistence(self.full_complex)
@@ -289,10 +304,6 @@ class GeometricComplex:
         weighted_simplices.sort(key=lambda s: s.data)
         filtered_complex = self.dionysus.Filtration(weighted_simplices)
         return filtered_complex
-
-    def real_coords(self, vertices):
-        """returns the physical coordinates of a list of vertices"""
-        return self.points[vertices]
 
     def sweep_function(self, simplex, axis, inverse):
         """ Given a simplex returns max value of the orthogonal projection
