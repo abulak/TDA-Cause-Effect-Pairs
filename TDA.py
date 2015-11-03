@@ -207,8 +207,7 @@ class GeometricComplex:
 
     def create_full_complex(self, radius):
         """
-        Creates the SORTED full complex (i.e. dionysus object) on the
-        self.points.
+        Creates the SORTED full complex (i.e. dionysus object) on self.points.
         Depending on the dimension n of the points it may be alpha-complex
         (for n=2,3) or Rips-complex (for n>3).
 
@@ -218,9 +217,9 @@ class GeometricComplex:
         length  <=1.
         This relies on the assumption that we deal with STANDARDISED DATA
         """
-        full_complex = self.dionysus.Filtration()
 
         if self.complex_model == "alpha":
+            full_complex = self.dionysus.Filtration()
             self.dionysus.fill_alpha_complex(self.points.tolist(),
                                              full_complex)
             one_skeleton = [smpl for smpl in full_complex
@@ -263,15 +262,54 @@ class GeometricComplex:
         self.full_complex = self.create_full_complex(radius=radius)
         connected = False
         while not connected:
-            z = FilteredComplex(self.full_complex)
-            if len(z.inf_life_0) > 1:
+            H0 = self.compute_0_th_homology(self.full_complex)
+            if len(H0["undying"]) > 1:
                 logging.warning("The complex seems to be disconected, doubling "
                                 "the threshold")
                 self.full_complex = self.create_full_complex(2 * radius)
             else:
                 connected = True
-        deaths = [x[1] for x in z.h_0]
+        deaths = [x[1] for x in H0["dying"]]
         return max(deaths)
+
+    def compute_0_th_homology(self, fcomplex):
+        persistence = self.dionysus.StaticPersistence(fcomplex)
+        persistence.pair_simplices()
+        smap = persistence.make_simplex_map(fcomplex)
+        homology = {"dying": [], "undying": []}
+
+        for i in persistence:
+            if i.sign() > 0:
+                birth_simplex = smap[i]
+                if len(birth_simplex.data) > 1:
+                    birth = birth_simplex.data[0]
+                else:
+                    birth = birth_simplex.data
+                if birth_simplex.dimension() == 0:
+                    if i.unpaired():
+                        death = float('inf')
+                        homology["undying"].append([birth, death])
+                        logging.debug("Undying simplex: %s at %f",
+                                      birth_simplex, birth_simplex.data)
+                    else:
+                        killing_simplex = smap[i.pair()]
+                        if len(killing_simplex.data) > 1:
+                            death = killing_simplex.data[0]
+                        else:
+                            death = killing_simplex.data
+                        if death > birth:
+                            homology["dying"].append([birth, death])
+                        else:
+                            logging.warning("You can not die before You were "
+                                            "born!")
+                            logging.warning(birth_simplex, birth,
+                                            killing_simplex, death)
+                elif birth_simplex.dimension() == 1:
+                    pass
+                else:
+                    logging.warning("There should be no simplices of "
+                                    "dim >1?! but there is: %s", birth_simplex)
+        return homology
 
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected
@@ -297,7 +335,7 @@ class GeometricComplex:
         :return: dionysus.Filtration of the limited complex
         """
         if self.complex_model == 'alpha':
-            # alpha complex also has data = (float, bool)
+            # alpha complex simplices have data = (float, bool)
             limited_simplices = [s for s in self.full_complex
                                  if s.data[0] <= threshold and
                                  s.dimension() < 2]
@@ -307,7 +345,7 @@ class GeometricComplex:
         logging.info("The threshold %f limits the complex size to "
                      "%d", threshold, len(limited_simplices))
         self.annotated_smpl_list = [self.annotate_simplex(s) for s in
-                                         limited_simplices]
+                                    limited_simplices]
         limited_complex = self.dionysus.Filtration(self.annotated_smpl_list)
         logging.info("Created the annotated complex")
         return limited_complex
@@ -354,7 +392,7 @@ class GeometricComplex:
                                         self.points[next(vertices)]]
         else:
             logging.warning("There shouldn't be any simplices of dim >1?!")
-            vertices_list = [v for v in x]
+            vertices_list = [v for v in vertices]
             simplex_real_coordinates = self.points[vertices_list]
 
         if not inverse:
