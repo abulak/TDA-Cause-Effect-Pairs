@@ -279,9 +279,14 @@ class GeometricComplex:
         return max(deaths)
 
     def create_limited_complex(self, threshold):
-        """ Creates complex by limiting simplices of self.full_complex
-        to those which have data[0] equal or smaller than cutoff"""
+        """
+        Creates complex by limiting simplices of self.full_complex
+        to those which have data equal or smaller than cutoff
+        :param threshold: float
+        :return: dionysus.Filtration of the limited complex
+        """
         if self.complex_model == 'alpha':
+            # alpha complex also has data = (float, bool)
             limited_simplices = [s for s in self.full_complex
                                  if s.data[0] <= threshold and
                                  s.dimension() < 2]
