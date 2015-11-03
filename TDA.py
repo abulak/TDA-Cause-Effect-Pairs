@@ -275,8 +275,9 @@ class GeometricComplex:
         return limited_complex
 
     def filtered_complex(self, axis, inverse=False):
-        """This method is actually a function. Returs filtered
-        self.limited_complex along axis and in direction:
+        """This method returns self.limited_complex filtered along
+        projection on $axis
+        in direction:
         ascending when inverse=False;
         descending when inverse=True"""
         weighted_simplices = []
