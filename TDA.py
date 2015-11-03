@@ -290,28 +290,6 @@ class GeometricComplex:
         filtered_complex = self.dionysus.Filtration(weighted_simplices)
         return filtered_complex
 
-    def get_real_edges_from_smpl(self, edges, points):
-        """Computes the real edges of a filtration; returns list ready to
-        supply to LineCollection
-        i.e. list of tuples ((begin_x,begin_y), (end_x,end_y))"""
-        lines = []
-        for edge in edges:
-            begin = points[edge[0]]
-            end = points[edge[1]]
-            lines.append((list(begin), list(end)))
-        return lines
-
-    def get_real_edges(self, cmplx):
-
-        edges = []
-        for simplex in cmplx:
-            if simplex.dimension() == 1:
-                x = simplex.vertices
-                edge = [next(x), next(x)]
-                edges.append(edge)
-        real_edges = self.get_real_edges_from_smpl(edges, self.points)
-        return real_edges
-
     def real_coords(self, vertices):
         """returns the physical coordinates of a list of vertices"""
         return self.points[vertices]
@@ -337,6 +315,28 @@ class GeometricComplex:
             return max(simplex_projection) - self.minima[axis]
         if inverse:
             return self.maxima[axis] - min(simplex_projection)
+
+    def get_real_edges_from_smpl(self, edges, points):
+        """Computes the real edges of a filtration; returns list ready to
+        supply to LineCollection
+        i.e. list of tuples ((begin_x,begin_y), (end_x,end_y))"""
+        lines = []
+        for edge in edges:
+            begin = points[edge[0]]
+            end = points[edge[1]]
+            lines.append((list(begin), list(end)))
+        return lines
+
+    def get_real_edges(self, cmplx):
+
+        edges = []
+        for simplex in cmplx:
+            if simplex.dimension() == 1:
+                x = simplex.vertices
+                edge = [next(x), next(x)]
+                edges.append(edge)
+        real_edges = self.get_real_edges_from_smpl(edges, self.points)
+        return real_edges
 
     def standardise_data(self):
         """Standardise self.points IN-PLACE i.e.
