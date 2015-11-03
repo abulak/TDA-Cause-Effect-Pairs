@@ -359,8 +359,8 @@ class CauseEffectPair:
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
 
-        # logging.basicConfig(filename=self.name+".log", level=logging.INFO,
-        #                     format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(filename=self.name+".log", level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
         logging.info("Starting CauseEffectPair")
         self.model = model
