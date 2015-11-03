@@ -215,6 +215,7 @@ class GeometricComplex:
             one_skeleton = [smpl for smpl in full_complex
                             if smpl.dimension() <= 1]
             full_complex = self.dionysus.Filtration(one_skeleton)
+            full_complex.sort(self.dionysus.data_dim_cmp)
 
         elif self.complex_model == "rips":
             logging.info("Using Rips-complex with radius %f. This may be slow "
@@ -222,7 +223,6 @@ class GeometricComplex:
 
             full_complex = self.exact_rips_graph(radius)
 
-        full_complex.sort(self.dionysus.data_cmp)
         logging.info("Created %s full complex of size %d", self.complex_model,
                      full_complex.__len__())
 
@@ -239,10 +239,11 @@ class GeometricComplex:
         simplices = []
         for i in range(self.points.shape[0]):
             simplices.append(self.dionysus.Simplex([i], 0))
-            for j in range(self.points.shape[0]):
-                d = distances[i][j]
+            for j in range(i+1, self.points.shape[0]):
+                d = float(distances[i][j])
                 if j != i and d < radius:
                     simplices.append(self.dionysus.Simplex([i, j], d))
+        simplices.sort(key=lambda x: x.data)
         full_complex = self.dionysus.Filtration(simplices)
         return full_complex
 
