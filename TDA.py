@@ -27,7 +27,9 @@ class FilteredComplex:
     """
     dionysus = __import__('dionysus')
 
-    def __init__(self, fcomplex):
+    def __init__(self, fcomplex, axis, inverse):
+        self.axis = axis
+        self.inverse = int(inverse)
         self.empty_diagram = self.dionysus.PersistenceDiagram(0)
         self.empty_diagram.append((0, 0))
         logging.debug("Initialising Static Presistence")
@@ -67,14 +69,15 @@ class FilteredComplex:
         for i in self.persistence:
             if i.sign() > 0:
                 birth_simplex = self.smap[i]
-                birth = birth_simplex.data
+                birth = birth_simplex.data[self.inverse][self.axis]
                 if i.unpaired():
                     death = float('inf')
 
                     if birth_simplex.dimension() == 0:
                         inf_life_0.append([birth, death])
                         logging.debug("Undying simplex: %s at %f",
-                                      birth_simplex, birth_simplex.data)
+                                      birth_simplex, birth_simplex.data[
+                                          self.inverse][self.axis])
                         undying += 1
                         if undying > 1:
                             logging.warning("The complex seems to be "
@@ -88,7 +91,7 @@ class FilteredComplex:
                                         birth_simplex)
                 else:
                     killing_simplex = self.smap[i.pair()]
-                    death = killing_simplex.data
+                    death = killing_simplex.data[self.inverse][self.axis]
                     if death > birth:
                         if birth_simplex.dimension() == 0:
                             h0.append([birth, death])
@@ -180,19 +183,27 @@ class GeometricComplex:
             self.x_inv_filtrations = []
             for i in self.x_range:
                 logging.info("X-variable: Projecting on %d-th axis", i)
-                self.x_filtrations.append(FilteredComplex(
-                    self.filtered_complex(i)))
-                self.x_inv_filtrations.append(FilteredComplex(
-                    self.filtered_complex(i, inverse=True)))
+                self.x_filtrations.append(
+                    FilteredComplex(self.filtered_complex(i),
+                                    axis=i,
+                                    inverse=False))
+                self.x_inv_filtrations.append(
+                    FilteredComplex(self.filtered_complex(i, inverse=True),
+                                    axis=i,
+                                    inverse=True))
 
             self.y_filtrations = []
             self.y_inv_filtrations = []
             for i in self.y_range:
                 logging.info("Y-variable: Projecting on %d-th axis", i)
-                self.y_filtrations.append(FilteredComplex(
-                    self.filtered_complex(i)))
-                self.y_inv_filtrations.append(FilteredComplex(
-                    self.filtered_complex(i, inverse=True)))
+                self.y_filtrations.append(
+                    FilteredComplex(self.filtered_complex(i),
+                                    axis=i,
+                                    inverse=False))
+                self.y_inv_filtrations.append(
+                    FilteredComplex(self.filtered_complex(i, inverse=True),
+                                    axis=i,
+                                    inverse=True))
 
     def create_full_complex(self, radius):
         """
