@@ -288,47 +288,65 @@ class GeometricComplex:
         else:  # self.complex_model == "rips":
             limited_simplices = [s for s in self.full_complex
                                  if s.data <= threshold]
-        limited_complex = self.dionysus.Filtration(limited_simplices)
         logging.info("The threshold %f limits the complex size to "
-                     "%d", threshold, limited_complex.__len__())
+                     "%d", threshold, len(limited_simplices))
+        self.annotated_smpl_list = [self.annotate_simplex(s) for s in
+                                         limited_simplices]
+        limited_complex = self.dionysus.Filtration(self.annotated_smpl_list)
+        logging.info("Created the annotated complex")
         return limited_complex
 
+    def annotate_simplex(self, simplex):
+        """
+        Attaches a list of all sweeps as simplex.data[0]
+        Attaches a list of all inv_sweeps as simplex.data[1]
+        :param simplex: dionysus.Simplex
+        :return: dionysus.Simplex
+        """
+        sweeps = self.sweep_function(simplex, inverse=False)
+        inv_sweeps = self.sweep_function(simplex, inverse=True)
+        simplex.data = [sweeps, inv_sweeps]
+        return simplex
+
     def filtered_complex(self, axis, inverse=False):
-        """This method returns self.limited_complex filtered along
-        projection on $axis
-        in direction:
-        ascending when inverse=False;
-        descending when inverse=True"""
-        weighted_simplices = []
-        for simplex in self.limited_complex:
-            d = self.sweep_function(simplex, axis, inverse)
-            simplex.data = d
-            weighted_simplices.append(simplex)
-        weighted_simplices.sort(key=lambda s: s.data)
-        filtered_complex = self.dionysus.Filtration(weighted_simplices)
+        """
+        Returns limited_complex filtered along projection on axis in one of
+        the directions.
+        :param axis: integer: the index of axis to project onto
+        :param inverse: bool: if true, the filtration is veversed
+        :return: dionysus.Filtration: SORTED filtration of self.limited_complex
+        """
+        self.annotated_smpl_list.sort(key=lambda s: s.data[int(inverse)][axis])
+        filtered_complex = self.dionysus.Filtration(self.annotated_smpl_list)
         return filtered_complex
 
-    def sweep_function(self, simplex, axis, inverse):
+    def sweep_function(self, simplex, inverse):
         """ Given a simplex returns max value of the orthogonal projection
         on the axis.
         If inverse is set to true, it returns min value """
 
         # this turns out to be much (20?!) faster than list(simplex.vertices)
-        x = simplex.vertices
+        vertices = simplex.vertices
         if simplex.dimension() == 0:
-            vert = [next(x)]
+            simplex_real_coordinates = self.points[next(vertices)]
+            if not inverse:
+                return simplex_real_coordinates - self.minima
+            if inverse:
+                return self.maxima - simplex_real_coordinates
         elif simplex.dimension() == 1:
-            vert = [next(x), next(x)]
+            simplex_real_coordinates = [self.points[next(vertices)],
+                                        self.points[next(vertices)]]
         else:
             logging.warning("There shouldn't be any simplices of dim >1?!")
-            vert = [v for v in x]
+            vertices_list = [v for v in x]
+            simplex_real_coordinates = self.points[vertices_list]
 
-        simplex_real_coordinates = self.real_coords(vertices=vert)
-        simplex_projection = simplex_real_coordinates[:, axis]
         if not inverse:
-            return max(simplex_projection) - self.minima[axis]
+            return np.maximum(simplex_real_coordinates[0],
+                              simplex_real_coordinates[1]) - self.minima
         if inverse:
-            return self.maxima[axis] - min(simplex_projection)
+            return self.maxima - np.minimum(simplex_real_coordinates[0],
+                                            simplex_real_coordinates[1])
 
     def get_real_edges_from_smpl(self, edges, points):
         """Computes the real edges of a filtration; returns list ready to
