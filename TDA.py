@@ -250,9 +250,9 @@ class GeometricComplex:
     def compute_the_last_death2(self, radius):
         """finds the minimal filtration s.t. the full_complex is connected"""
         self.full_complex = self.create_full_complex(radius=radius)
-        z = FilteredComplex(self.full_complex)
         connected = False
         while not connected:
+            z = FilteredComplex(self.full_complex)
             if len(z.inf_life_0) > 1:
                 logging.warning("The complex seems to be disconected, doubling "
                                 "the threshold")
@@ -263,7 +263,10 @@ class GeometricComplex:
         return max(deaths)
 
     def compute_the_last_death(self):
-        """finds the minimal filtration s.t. the full_complex is connected"""
+        """finds the minimal filtration s.t. the full_complex is connected
+        It is more efficient, but doesn't guarantee that the complex will be
+        connected. Use only if You know this in advance
+        """
         full_persistence = self.dionysus.StaticPersistence(self.full_complex)
         full_persistence.pair_simplices()
         smap = full_persistence.make_simplex_map(self.full_complex)
