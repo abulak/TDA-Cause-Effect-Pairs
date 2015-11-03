@@ -391,6 +391,19 @@ class CauseEffectPair:
         outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
         self.outliers = np.loadtxt(outliers_file).astype(np.int)
 
+    def remove_outliers(self, i):
+        """
+        :param i: number outliers to remove from self.std_points
+        :return: numpy array of std_points without outliers[:i]
+        """
+        points_masked = ma.MaskedArray(self.std_points)
+        for outlier in self.outliers[:i]:
+            points_masked[outlier] = ma.masked
+        cleaned_points = points_masked.compressed().reshape(
+                self.std_points.shape[0] - i, self.dimension)
+
+        return cleaned_points
+
     def compute_topological_summary(self):
         """
         For each in self.outliers generate cleaned_points. Then construct
@@ -410,14 +423,12 @@ class CauseEffectPair:
         values are arrays of persistance pairs
         """
 
-        points_masked = ma.MaskedArray(self.std_points)
         self.persistence_pairs = []
         self.extrema = []
         for i, outlier in enumerate(self.outliers, start=1):
             logging.info("Outlier: %d of %d", i, self.outliers.shape[0])
-            points_masked[outlier] = ma.masked
-            cleaned_points = points_masked.compressed().reshape(
-                self.std_points.shape[0] - i, self.dimension)
+
+            cleaned_points = self.remove_outliers(i)
             self.geometric_complex = GeometricComplex(cleaned_points,
                                                       self.x_range,
                                                       self.y_range)
