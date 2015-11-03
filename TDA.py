@@ -168,10 +168,12 @@ class GeometricComplex:
                        for i in range(self.dimension)]
         self.minima = [np.min(self.points[:, i])
                        for i in range(self.dimension)]
+        self.full_complex = self.create_full_complex(
+            radius=np.sqrt(self.dimension))
+        self.the_cutoff = self.compute_the_last_death()
 
-        self.__create_full_complex__()
-        self.the_alpha = self.compute_the_last_death()
-        self.__create_limited_complex__(threshold=self.the_alpha)
+        self.limited_complex = self.create_limited_complex(
+            threshold=self.the_cutoff)
 
         if full_initialisation:
             self.x_filtrations = []
@@ -192,9 +194,10 @@ class GeometricComplex:
                 self.y_inv_filtrations.append(FilteredComplex(
                     self.filtered_complex(i, inverse=True)))
 
-    def __create_full_complex__(self, radius):
+    def create_full_complex(self, radius):
         """
-        Creates the full complex (i.e. dionysus object) on the self.points.
+        Creates the SORTED full complex (i.e. dionysus object) on the
+        self.points.
         Depending on the dimension n of the points it may be alpha-complex
         (for n=2,3) or Rips-complex (for n>3).
 
@@ -204,24 +207,26 @@ class GeometricComplex:
         length  <=1.
         This relies on the assumption that we deal with STANDARDISED DATA
         """
-        self.full_complex = self.dionysus.Filtration()
+        full_complex = self.dionysus.Filtration()
 
         if self.complex_model == "alpha":
             self.dionysus.fill_alpha_complex(self.points.tolist(),
-                                             self.full_complex)
-            one_skeleton = [smpl for smpl in self.full_complex
+                                             full_complex)
+            one_skeleton = [smpl for smpl in full_complex
                             if smpl.dimension() <= 1]
-            self.full_complex = self.dionysus.Filtration(one_skeleton)
+            full_complex = self.dionysus.Filtration(one_skeleton)
 
         elif self.complex_model == "rips":
             logging.info("Using Rips-complex with radius %f. This may be slow "
                          "for dense sets!", radius)
 
-            self.full_complex = self.exact_rips_graph(radius)
+            full_complex = self.exact_rips_graph(radius)
 
-        self.full_complex.sort(self.dionysus.data_dim_cmp)
+        full_complex.sort(self.dionysus.data_cmp)
         logging.info("Created %s full complex of size %d", self.complex_model,
-                     self.full_complex.__len__())
+                     full_complex.__len__())
+
+        return full_complex
 
     def exact_rips_graph(self, radius):
         """
@@ -254,7 +259,7 @@ class GeometricComplex:
                       if smap[i].dimension() == 0]
         return max(deaths)
 
-    def __create_limited_complex__(self, threshold):
+    def create_limited_complex(self, threshold):
         """ Creates complex by limiting simplices of self.full_complex
         to those which have data[0] equal or smaller than cutoff"""
         if self.complex_model == 'alpha':
@@ -264,9 +269,10 @@ class GeometricComplex:
         else:  # self.complex_model == "rips":
             limited_simplices = [s for s in self.full_complex
                                  if s.data <= threshold]
-        self.limited_complex = self.dionysus.Filtration(limited_simplices)
+        limited_complex = self.dionysus.Filtration(limited_simplices)
         logging.info("The threshold %f limits the complex size to "
-                     "%d", threshold, self.limited_complex.__len__())
+                     "%d", threshold, limited_complex.__len__())
+        return limited_complex
 
     def filtered_complex(self, axis, inverse=False):
         """This method is actually a function. Returs filtered
