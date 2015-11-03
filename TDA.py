@@ -283,7 +283,8 @@ class GeometricComplex:
         descending when inverse=True"""
         weighted_simplices = []
         for simplex in self.limited_complex:
-            simplex.data = self.sweep_function(simplex, axis, inverse)
+            d = self.sweep_function(simplex, axis, inverse)
+            simplex.data = d
             weighted_simplices.append(simplex)
         weighted_simplices.sort(key=lambda s: s.data)
         filtered_complex = self.dionysus.Filtration(weighted_simplices)
