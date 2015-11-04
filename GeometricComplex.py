@@ -203,7 +203,8 @@ class RipsGeometricComplex(GeometricComplex):
             if len(homology_0["undying"]) > 1:
                 logging.info("The complex seems to be disconected, doubling "
                              "the threshold")
-                self.full_complex = self.create_full_complex(2 * radius)
+                radius *= 2
+                self.full_complex = self.create_full_complex(radius)
             else:
                 connected = True
         deaths = [x[1] for x in homology_0["dying"]]
