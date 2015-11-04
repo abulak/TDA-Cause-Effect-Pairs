@@ -108,17 +108,19 @@ class CauseEffectPair:
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                    self.geometric_complex.filtered_complexes[
-                        'X'].homology_0['dying'],
+                    self.get_homology('X', range(len(self.x_range))),
                  "x_inv_filtration_H0":
-                    self.geometric_complex.filtered_complexes[
-                        'X_inverted'].homology_0['dying'],
+                    self.get_homology('X_inverted', range(len(self.x_range))),
                  "y_filtration_H0":
-                    self.geometric_complex.filtered_complexes[
-                        'Y'].homology_0['dying'],
+                    self.get_homology('Y', range(len(self.y_range))),
                  "y_inv_filtration_H0":
-                    self.geometric_complex.filtered_complexes[
-                        'Y_inverted'].homology_0['dying']})
+                    self.get_homology('Y_inverted', range(len(self.y_range)))})
+
+    def get_homology(self, key, range):
+        filtered_complexes = [
+            self.geometric_complex.filtered_complexes[key][i] for i in range]
+        homology = [x.homology_0['dying'] for x in filtered_complexes]
+        return homology
 
     def save_topological_summary(self):
         """
