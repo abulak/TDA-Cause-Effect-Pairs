@@ -43,22 +43,26 @@ class GeometricComplex:
         self.y_range = y_range
         logging.info("Variable Y range: %s", " ".join([str(i) for i in
                                                        self.y_range]))
-        self.filtered_complexes = {}
+        self.filtered_complexes = {
+            "X": [],
+            "Y": [],
+            "X_inverted": [],
+            "Y_inverted": []}
         self.annotated_simplices = []
 
     def do_all_filtrations(self):
         for i in self.x_range:
             logging.info("X-variable: Projecting on %d-th axis", i)
-            self.filtered_complexes['X'] = self.filtered_complex(
-                axis=i, inverse=False)
-            self.filtered_complexes['X_inverted'] = self.filtered_complex(
-                axis=i, inverse=True)
+            self.filtered_complexes['X'].append(self.filtered_complex(
+                axis=i, inverse=False))
+            self.filtered_complexes['X_inverted'].append(self.filtered_complex(
+                axis=i, inverse=True))
         for i in self.y_range:
             logging.info("Y-variable: Projecting on %d-th axis", i)
-            self.filtered_complexes['Y'] = self.filtered_complex(
-                axis=i, inverse=False)
-            self.filtered_complexes['Y_inverted'] = self.filtered_complex(
-                axis=i, inverse=True)
+            self.filtered_complexes['Y'].append(self.filtered_complex(
+                axis=i, inverse=False))
+            self.filtered_complexes['Y_inverted'].append(self.filtered_complex(
+                axis=i, inverse=True))
 
     def filtered_complex(self, axis, inverse):
         """
