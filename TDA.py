@@ -107,13 +107,13 @@ class CauseEffectPair:
                 })
 
             self.persistence_pairs.append(
-                {"x_filtration_H0":
+                {"X":
                     self.get_homology('X', range(len(self.x_range))),
-                 "x_inv_filtration_H0":
+                 "X_inverted":
                     self.get_homology('X_inverted', range(len(self.x_range))),
-                 "y_filtration_H0":
+                 "Y":
                     self.get_homology('Y', range(len(self.y_range))),
-                 "y_inv_filtration_H0":
+                 "Y_inverted":
                     self.get_homology('Y_inverted', range(len(self.y_range)))})
 
     def get_homology(self, key, range):
