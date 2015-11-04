@@ -26,24 +26,17 @@ class FilteredComplex:
     distance
     """
     dionysus = __import__('dionysus')
+    empty_diagram = dionysus.PersistenceDiagram(0)
+    empty_diagram.append((0, 0))
 
-    def __init__(self, fcomplex, axis, inverse):
-        self.axis = axis
-        self.inverse = int(inverse)
-        self.empty_diagram = self.dionysus.PersistenceDiagram(0)
-        self.empty_diagram.append((0, 0))
+    def __init__(self, fcomplex):
+
         logging.debug("Initialising Static Presistence")
         self.persistence = self.dionysus.StaticPersistence(fcomplex)
 
         logging.debug("Pairing Simplices")
         self.persistence.pair_simplices()
         self.smap = self.persistence.make_simplex_map(fcomplex)
-
-        logging.debug("Computing Persistence Pairs")
-        self.compute_persistence_pairs()
-
-        logging.debug("Creating Diagrams")
-        self.create_persistence_diagrams()
 
     def distance(self, p=0):
         """Returns p-th Wasserstein distance between the filtration's 0-diagram
@@ -52,6 +45,9 @@ class FilteredComplex:
 
         TODO: higher dimensions"""
 
+        if not hasattr(self,"persistance_diagram_0"):
+            self.persistence_diagram_0 = self.create_persistence_diagrams()
+
         if p > 0:
             return self.dionysus.wasserstein_distance(
                 self.persistence_diagram_0, self.empty_diagram, p)
@@ -59,77 +55,141 @@ class FilteredComplex:
             return self.dionysus.bottleneck_distance(
                 self.persistence_diagram_0, self.empty_diagram)
 
-    def compute_persistence_pairs(self):
-        """ Computes the persistence pairs for the filered complex"""
-        h0 = []
-        inf_life_0 = []
-        # h1 = []
-        # Inf_life_1 = []
+    def compute_homology(self, dimension=0):
+        """ Computes the homology persistence pairs for the filtered complex"""
+
+        logging.debug("Computing 0-th Persistence Homology Pairs")
+
+        homology = {"dying": [], "undying": []}
+        undying = 0
+        for i in self.persistence:
+            if i.sign() > 0:
+                birth_simplex = self.smap[i]
+                birth = birth_simplex.data
+                if birth_simplex.dimension() == dimension:
+                    if i.unpaired():
+                        death = float('inf')
+                        homology["undying"].append([birth, death])
+                        logging.debug("Undying simplex: %s at %f",
+                                      birth_simplex, birth_simplex.data)
+                        undying += 1
+                        if undying > 1:
+                            logging.debug("The complex seems to be "
+                                            "disconnected?!")
+                    else:
+                        killing_simplex = self.smap[i.pair()]
+                        death = killing_simplex.data
+                        if death > birth:
+                            homology["dying"].append([birth, death])
+                        elif death < birth:
+                            logging.warning("You can not die before You were "
+                                            "born!")
+                            logging.warning(birth_simplex, birth,
+                                            killing_simplex, death)
+                elif birth_simplex.dimension() > 1:
+                    logging.warning("There should be no simplices of dim >1?! "
+                                    "but there is: %s", birth_simplex)
+        return homology
+
+    def create_persistence_diagrams(self):
+        logging.debug("Creating Diagrams")
+
+        if self.homology["dying"]:
+            persistence_diagram = self.dionysus.PersistenceDiagram(0)
+            all_pairs = [tuple(x) for x in self.homology["dying"]]
+            for x in all_pairs:
+                persistence_diagram.append(x)
+        else:
+            persistence_diagram = self.empty_diagram
+
+        return persistence_diagram
+
+
+class SweepFilteredComplex(FilteredComplex):
+
+    def __init__(self, fcomplex, axis, inverse):
+        self.axis = axis
+        self.inverse = int(inverse)
+
+        FilteredComplex.__init__(self, fcomplex)
+
+        self.homology_0 = self.compute_homology(dimension=0)
+
+    def compute_homology(self, dimension=0):
+        logging.debug("Computing 0-th Persistence Homology Pairs")
+
+        homology = {"dying": [], "undying": []}
         undying = 0
         for i in self.persistence:
             if i.sign() > 0:
                 birth_simplex = self.smap[i]
                 birth = birth_simplex.data[self.inverse][self.axis]
-                if i.unpaired():
-                    death = float('inf')
-
-                    if birth_simplex.dimension() == 0:
-                        inf_life_0.append([birth, death])
+                if birth_simplex.dimension() == dimension:
+                    if i.unpaired():
+                        death = float('inf')
+                        homology["undying"].append([birth, death])
                         logging.debug("Undying simplex: %s at %f",
-                                      birth_simplex, birth_simplex.data[
-                                          self.inverse][self.axis])
+                                      birth_simplex, birth)
                         undying += 1
                         if undying > 1:
                             logging.warning("The complex seems to be "
                                             "disconnected?!")
-                    elif birth_simplex.dimension() == 1:
-                        pass
-                    #     Inf_life_1.append([birth, death])
                     else:
-                        logging.warning("There should be no simplices of "
-                                        "dim >1?! but there is: %s",
-                                        birth_simplex)
-                else:
-                    killing_simplex = self.smap[i.pair()]
-                    death = killing_simplex.data[self.inverse][self.axis]
-                    if death > birth:
-                        if birth_simplex.dimension() == 0:
-                            h0.append([birth, death])
-                        elif birth_simplex.dimension() == 1:
-                            pass
-                        #     h1.append([birth, death])
-                        else:
-                            logging.warning("There should be no simplices of "
-                                            "dim >1?! but there is: %s",
-                                            birth_simplex)
-                    elif death < birth:
-                        logging.warning("You can not die before You were born!")
-                        logging.warning(birth_simplex, birth,
-                                        killing_simplex, death)
+                        killing_simplex = self.smap[i.pair()]
+                        death = killing_simplex.data[self.inverse][self.axis]
+                        if death > birth:
+                            homology["dying"].append([birth, death])
+                        elif death < birth:
+                            logging.warning("You can not die before You were "
+                                            "born!")
+                            logging.warning(birth_simplex, birth,
+                                            killing_simplex, death)
+                elif birth_simplex.dimension() > 1:
+                    logging.warning("There should be no simplices of dim >1?! "
+                                    "but there is: %s", birth_simplex)
+        return homology
+
+
+class AlphaFilteredComplex(FilteredComplex):
+
+    def __init__(self, fcomplex):
+        FilteredComplex.__init__(self, fcomplex)
+
+        self.homology_0 = self.compute_homology(dimension=0)
+
+    def compute_homology(self, dimension=0):
+        logging.debug("Computing 0-th Persistence Homology Pairs")
+
+        homology = {"dying": [], "undying": []}
+        undying = 0
+        for i in self.persistence:
+            if i.sign() > 0:
+                birth_simplex = self.smap[i]
+                birth = birth_simplex.data[0]
+                if birth_simplex.dimension() == dimension:
+                    if i.unpaired():
+                        death = float('inf')
+                        homology["undying"].append([birth, death])
+                        logging.debug("Undying simplex: %s at %f",
+                                      birth_simplex, birth)
+                        undying += 1
+                        if undying > 1:
+                            logging.warning("The complex seems to be "
+                                            "disconnected?!")
                     else:
-                        pass
-
-        self.h_0 = h0
-        # self.h_1 = h1
-        self.inf_life_0 = inf_life_0
-        # self.inf_life_1 = inf_life_1
-        # return h0, h1, inf_life_0, inf_life_1
-
-    def create_persistence_diagrams(self):
-        if self.h_0:
-            self.persistence_diagram_0 = self.dionysus.PersistenceDiagram(0)
-            all_pairs = [tuple(x) for x in self.h_0]
-            for x in all_pairs:
-                self.persistence_diagram_0.append(x)
-        else:
-            self.persistence_diagram_0 = self.empty_diagram
-#         if self.h_1:
-#             self.persistence_diagram_1 = dionysus.PersistenceDiagram(1)
-#             all_pairs = [tuple(x) for x in self.h_1]
-#             for x in all_pairs:
-#                 self.persistence_diagram_1.append(x)
-#         else:
-#             self.persistence_diagram_1 = self.empty_diagram
+                        killing_simplex = self.smap[i.pair()]
+                        death = killing_simplex.data[0]
+                        if death > birth:
+                            homology["dying"].append([birth, death])
+                        elif death < birth:
+                            logging.warning("You can not die before You were "
+                                            "born!")
+                            logging.warning(birth_simplex, birth,
+                                            killing_simplex, death)
+                elif birth_simplex.dimension() > 1:
+                    logging.warning("There should be no simplices of dim >1?! "
+                                    "but there is: %s", birth_simplex)
+        return homology
 
 
 class GeometricComplex:
@@ -147,208 +207,56 @@ class GeometricComplex:
     """
     dionysus = __import__('dionysus')  # own copy of the not thread-safe library
 
-    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
-                 full_initialisation=True):
+    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2)):
 
         self.points = cleaned_data
-        self.points_list = cleaned_data.tolist()
-        logging.info("Creating GeometricComplex on %d points",
-                     self.points.shape[0])
-        self.dimension = self.points[0].shape[0]
+        logging.info("Creating GeometricComplex on %d points in dimension %d",
+                     self.points.shape[0], self.points.shape[1])
+        self.dimension = self.points.shape[1]
         self.standardise_data()
 
-        if self.dimension <= 3:
-            self.complex_model = "alpha"
-        else:
-            self.complex_model = "rips"
+        self.maxima = np.array([np.max(self.points[:, i])
+                                for i in range(self.dimension)])
+        self.minima = np.array([np.min(self.points[:, i])
+                                for i in range(self.dimension)])
 
         self.x_range = x_range
         logging.info("Variable X range: %s", " ".join([str(i) for i in
-                                                    self.x_range]))
+                                                       self.x_range]))
         self.y_range = y_range
         logging.info("Variable Y range: %s", " ".join([str(i) for i in
-                                                    self.y_range]))
-        self.maxima = [np.max(self.points[:, i])
-                       for i in range(self.dimension)]
-        self.minima = [np.min(self.points[:, i])
-                       for i in range(self.dimension)]
+                                                       self.y_range]))
+        self.filtrations = {}
+        #         "X": [],
+        #         "X_inverted": [],
+        #         "Y": [],
+        #         "Y_inverted": []}
 
-        self.the_cutoff = self.compute_the_last_death2(np.sqrt(self.dimension))
+    def do_all_filtrations(self):
+        for i in self.x_range:
+            logging.info("X-variable: Projecting on %d-th axis", i)
+            self.filtrations['X'] = self.filtered_complex(axis=i,
+                                                          inverse=False)
+            self.filtrations['X_inverted'] = self.filtered_complex(axis=i,
+                                                                inverse=True)
+        for i in self.y_range:
+            logging.info("Y-variable: Projecting on %d-th axis", i)
+            self.filtrations['Y'] = self.filtered_complex(axis=i,
+                                                          inverse=False)
+            self.filtrations['Y_inverted'] = self.filtered_complex(axis=i,
+                                                                inverse=True)
 
-        self.limited_complex = self.create_limited_complex(
-            threshold=self.the_cutoff)
-
-        if full_initialisation:
-            self.x_filtrations = []
-            self.x_inv_filtrations = []
-            for i in self.x_range:
-                logging.info("X-variable: Projecting on %d-th axis", i)
-                self.x_filtrations.append(
-                    FilteredComplex(self.filtered_complex(i),
-                                    axis=i,
-                                    inverse=False))
-                self.x_inv_filtrations.append(
-                    FilteredComplex(self.filtered_complex(i, inverse=True),
-                                    axis=i,
-                                    inverse=True))
-
-            self.y_filtrations = []
-            self.y_inv_filtrations = []
-            for i in self.y_range:
-                logging.info("Y-variable: Projecting on %d-th axis", i)
-                self.y_filtrations.append(
-                    FilteredComplex(self.filtered_complex(i),
-                                    axis=i,
-                                    inverse=False))
-                self.y_inv_filtrations.append(
-                    FilteredComplex(self.filtered_complex(i, inverse=True),
-                                    axis=i,
-                                    inverse=True))
-
-    def create_full_complex(self, radius):
+    def filtered_complex(self, axis, inverse):
         """
-        Creates the SORTED full complex (i.e. dionysus object) on self.points.
-        Depending on the dimension n of the points it may be alpha-complex
-        (for n=2,3) or Rips-complex (for n>3).
-
-        Note that Rips complex may quickly become huge for dense datasets.
-        We generate Rips complex for higher-dimensional data;
-        We restrict to 1-skeleton (ie. points & edges) and build edges of
-        length  <=1.
-        This relies on the assumption that we deal with STANDARDISED DATA
+        Returns complex filtered along projection on axis in one of
+        the directions.
+        :param axis: integer: the index of axis to project onto
+        :param inverse: bool: if true, the filtration is veversed
+        :return: dionysus.Filtration: SORTED filtration of self.limited_complex
         """
-
-        if self.complex_model == "alpha":
-            full_complex = self.dionysus.Filtration()
-            self.dionysus.fill_alpha_complex(self.points.tolist(),
-                                             full_complex)
-            one_skeleton = [smpl for smpl in full_complex
-                            if smpl.dimension() <= 1]
-            full_complex = self.dionysus.Filtration(one_skeleton)
-            full_complex.sort(self.dionysus.data_dim_cmp)
-
-        elif self.complex_model == "rips":
-            logging.info("Using Rips-complex with radius %f. This may be slow "
-                         "for dense sets!", radius)
-
-            full_complex = self.exact_rips_graph(radius)
-
-        logging.info("Created %s full complex of size %d", self.complex_model,
-                     full_complex.__len__())
-
-        return full_complex
-
-    def exact_rips_graph(self, radius):
-        """
-        :param radius: float
-        :return: dionysus weighted filtration of neighbouring graph
-        """
-
-        from scipy.spatial.distance import cdist
-        distances = cdist(self.points, self.points)
-        simplices = []
-        for i in range(self.points.shape[0]):
-            simplices.append(self.dionysus.Simplex([i], 0))
-            for j in range(i+1, self.points.shape[0]):
-                d = float(distances[i][j])
-                if j != i and d < radius:
-                    simplices.append(self.dionysus.Simplex([i, j], d))
-        simplices.sort(key=lambda x: x.data)
-        full_complex = self.dionysus.Filtration(simplices)
-        return full_complex
-
-    def compute_the_last_death2(self, radius):
-        """finds the minimal filtration s.t. the full_complex is connected"""
-        self.full_complex = self.create_full_complex(radius=radius)
-        connected = False
-        while not connected:
-            H0 = self.compute_0_th_homology(self.full_complex)
-            if len(H0["undying"]) > 1:
-                logging.warning("The complex seems to be disconected, doubling "
-                                "the threshold")
-                self.full_complex = self.create_full_complex(2 * radius)
-            else:
-                connected = True
-        deaths = [x[1] for x in H0["dying"]]
-        return max(deaths)
-
-    def compute_0_th_homology(self, fcomplex):
-        persistence = self.dionysus.StaticPersistence(fcomplex)
-        persistence.pair_simplices()
-        smap = persistence.make_simplex_map(fcomplex)
-        homology = {"dying": [], "undying": []}
-
-        for i in persistence:
-            if i.sign() > 0:
-                birth_simplex = smap[i]
-                if len(birth_simplex.data) > 1:
-                    birth = birth_simplex.data[0]
-                else:
-                    birth = birth_simplex.data
-                if birth_simplex.dimension() == 0:
-                    if i.unpaired():
-                        death = float('inf')
-                        homology["undying"].append([birth, death])
-                        logging.debug("Undying simplex: %s at %f",
-                                      birth_simplex, birth_simplex.data)
-                    else:
-                        killing_simplex = smap[i.pair()]
-                        if len(killing_simplex.data) > 1:
-                            death = killing_simplex.data[0]
-                        else:
-                            death = killing_simplex.data
-                        if death > birth:
-                            homology["dying"].append([birth, death])
-                        else:
-                            logging.warning("You can not die before You were "
-                                            "born!")
-                            logging.warning(birth_simplex, birth,
-                                            killing_simplex, death)
-                elif birth_simplex.dimension() == 1:
-                    pass
-                else:
-                    logging.warning("There should be no simplices of "
-                                    "dim >1?! but there is: %s", birth_simplex)
-        return homology
-
-    def compute_the_last_death(self):
-        """finds the minimal filtration s.t. the full_complex is connected
-        It is more efficient, but doesn't guarantee that the complex will be
-        connected. Use only if You know this in advance
-        """
-        full_persistence = self.dionysus.StaticPersistence(self.full_complex)
-        full_persistence.pair_simplices()
-        smap = full_persistence.make_simplex_map(self.full_complex)
-        if self.complex_model == 'alpha':
-            deaths = [smap[i.pair()].data[0] for i in full_persistence
-                      if smap[i].dimension() == 0]
-        else:  # self.complex_model == "rips":
-            deaths = [smap[i.pair()].data for i in full_persistence
-                      if smap[i].dimension() == 0]
-        return max(deaths)
-
-    def create_limited_complex(self, threshold):
-        """
-        Creates complex by limiting simplices of self.full_complex
-        to those which have data equal or smaller than cutoff
-        :param threshold: float
-        :return: dionysus.Filtration of the limited complex
-        """
-        if self.complex_model == 'alpha':
-            # alpha complex simplices have data = (float, bool)
-            limited_simplices = [s for s in self.full_complex
-                                 if s.data[0] <= threshold and
-                                 s.dimension() < 2]
-        else:  # self.complex_model == "rips":
-            limited_simplices = [s for s in self.full_complex
-                                 if s.data <= threshold]
-        logging.info("The threshold %f limits the complex size to "
-                     "%d", threshold, len(limited_simplices))
-        self.annotated_smpl_list = [self.annotate_simplex(s) for s in
-                                    limited_simplices]
-        limited_complex = self.dionysus.Filtration(self.annotated_smpl_list)
-        logging.info("Created the annotated complex")
-        return limited_complex
+        self.annotated_simplices.sort(key=lambda s: s.data[int(inverse)][axis])
+        cmplx = self.dionysus.Filtration(self.annotated_simplices)
+        return SweepFilteredComplex(cmplx, axis, inverse)
 
     def annotate_simplex(self, simplex):
         """
@@ -361,18 +269,6 @@ class GeometricComplex:
         inv_sweeps = self.sweep_function(simplex, inverse=True)
         simplex.data = [sweeps, inv_sweeps]
         return simplex
-
-    def filtered_complex(self, axis, inverse=False):
-        """
-        Returns limited_complex filtered along projection on axis in one of
-        the directions.
-        :param axis: integer: the index of axis to project onto
-        :param inverse: bool: if true, the filtration is veversed
-        :return: dionysus.Filtration: SORTED filtration of self.limited_complex
-        """
-        self.annotated_smpl_list.sort(key=lambda s: s.data[int(inverse)][axis])
-        filtered_complex = self.dionysus.Filtration(self.annotated_smpl_list)
-        return filtered_complex
 
     def sweep_function(self, simplex, inverse):
         """ Given a simplex returns max value of the orthogonal projection
@@ -402,6 +298,16 @@ class GeometricComplex:
             return self.maxima - np.minimum(simplex_real_coordinates[0],
                                             simplex_real_coordinates[1])
 
+    def standardise_data(self):
+        """Standardise self.points IN-PLACE i.e.
+        mean = 0 and standard deviation = 1 in all dimensions"""
+        for i in range(self.dimension):
+            p = self.points[:, i]
+            mean = np.mean(p)
+            std = np.std(p)
+            p -= mean
+            p /= std
+
     def get_real_edges_from_smpl(self, edges, points):
         """Computes the real edges of a filtration; returns list ready to
         supply to LineCollection
@@ -424,15 +330,125 @@ class GeometricComplex:
         real_edges = self.get_real_edges_from_smpl(edges, self.points)
         return real_edges
 
-    def standardise_data(self):
-        """Standardise self.points IN-PLACE i.e.
-        mean = 0 and standard deviation = 1 in all dimensions"""
-        for i in range(self.dimension):
-            p = self.points[:, i]
-            mean = np.mean(p)
-            std = np.std(p)
-            p -= mean
-            p /= std
+
+class RipsGeometricComplex(GeometricComplex):
+
+    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
+                 full_initialisation=True):
+        GeometricComplex.__init__(self, cleaned_data,
+                                  x_range=x_range, y_range=y_range)
+        radius = np.sqrt(self.dimension)
+        self.full_complex = self.create_full_complex(radius)
+        self.cutoff = self.compute_the_last_death(radius)
+        self.limited_simplices = [s for s in self.full_complex
+                                  if s.data <= self.cutoff]
+        logging.info("The threshold %f limits the Rips complex size to "
+                     "%d", self.cutoff, len(self.limited_simplices))
+        self.annotated_simplices = [self.annotate_simplex(s)
+                                    for s in self.limited_simplices]
+        logging.info("Annotating simplices done.")
+
+        if full_initialisation:
+            self.do_all_filtrations()
+
+    def create_full_complex(self, radius):
+        """
+        Creates the SORTED full neighbouring graph of the Vietoris-Rips complex.
+        Note that VR complex may quickly become huge for dense datasets.
+        We restrict to 1-skeleton (ie. points & edges) and build edges of
+        length  2*sqrt(3).
+        This relies on the assumption that we deal with STANDARDISED DATA
+        """
+
+        logging.info("Using Rips-complex with radius %f. This may be slow "
+                     "for dense sets!", radius)
+        full_complex = self.rips_graph(radius)
+        logging.info("Created full Rips complex of size %d",
+                     full_complex.__len__())
+        return full_complex
+
+    def rips_graph(self, radius):
+        """
+        Bruteforce creation of neighbouring graph
+        :param radius: float
+        :return: dionysus weighted filtration of neighbouring graph
+        """
+        from scipy.spatial.distance import cdist
+        distances = cdist(self.points, self.points)
+        simplices = []
+        for i in range(self.points.shape[0]):
+            simplices.append(self.dionysus.Simplex([i], 0))
+            for j in range(i+1, self.points.shape[0]):
+                d = float(distances[i][j])
+                if j != i and d < radius:
+                    simplices.append(self.dionysus.Simplex([i, j], d))
+        simplices.sort(key=lambda x: x.data)
+        full_complex = self.dionysus.Filtration(simplices)
+        return full_complex
+
+    def compute_the_last_death(self, radius):
+        """finds the minimal filtration s.t. the full_complex is connected"""
+        connected = False
+        while not connected:
+            z = FilteredComplex(self.full_complex)
+            homology = z.compute_homology()
+            if len(homology["undying"]) > 1:
+                logging.info("The complex seems to be disconected, doubling "
+                             "the threshold")
+                self.full_complex = self.create_full_complex(2 * radius)
+            else:
+                connected = True
+        deaths = [x[1] for x in homology["dying"]]
+        return max(deaths)
+
+
+class AlphaGeometricComplex(GeometricComplex):
+
+    def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
+                 full_initialisation=True):
+        GeometricComplex.__init__(self, cleaned_data,
+                                  x_range=x_range, y_range=y_range)
+
+        self.full_complex = self.create_full_complex()
+
+        self.cutoff = self.compute_the_last_death()
+        self.limited_simplices = [s for s in self.full_complex
+                                  if s.data[0] <= self.cutoff and
+                                  s.dimension() < 2]
+        logging.info("The threshold %f limits the Alpha complex size to "
+                     "%d", self.cutoff, len(self.limited_simplices))
+        self.annotated_simplices = [self.annotate_simplex(s)
+                                    for s in self.limited_simplices]
+        logging.info("Annotating simplices done.")
+
+        if full_initialisation:
+            self.do_all_filtrations()
+
+    def create_full_complex(self):
+        """
+        Creates the SORTED alpha complex (i.e. dionysus object) on
+        self.points"""
+        full_complex = self.dionysus.Filtration()
+        self.dionysus.fill_alpha_complex(self.points.tolist(),
+                                         full_complex)
+        one_skeleton = [smpl for smpl in full_complex if smpl.dimension() <= 1]
+        full_complex = self.dionysus.Filtration(one_skeleton)
+        logging.info("Created full Alpha complex of size %d",
+                     len(full_complex))
+        full_complex.sort(self.dionysus.data_dim_cmp)
+        return full_complex
+
+    def compute_the_last_death(self):
+        """finds the minimal filtration s.t. the full_complex is connected
+        It assumes that the complex will is CONNECTED (as alpha complexes are).
+        """
+        full_persistence = self.dionysus.StaticPersistence(self.full_complex)
+        full_persistence.pair_simplices()
+        smap = full_persistence.make_simplex_map(self.full_complex)
+
+        deaths = [smap[i.pair()].data[0] for i in full_persistence
+                  if smap[i].dimension() == 0]
+        return max(deaths)
 
 
 class CauseEffectPair:
@@ -472,7 +488,7 @@ class CauseEffectPair:
 
         std_points_file = os.path.join(self.current_dir, "std_points")
         self.std_points = np.loadtxt(std_points_file)
-        self.dimension = int(self.std_points[0].shape[0])
+        self.dimension = int(self.std_points.shape[1])
 
         outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
         self.outliers = np.loadtxt(outliers_file).astype(np.int)
@@ -515,24 +531,33 @@ class CauseEffectPair:
             logging.info("Outlier: %d of %d", i, self.outliers.shape[0])
 
             cleaned_points = self.remove_outliers(i)
-            self.geometric_complex = GeometricComplex(cleaned_points,
-                                                      self.x_range,
-                                                      self.y_range)
+            if self.dimension <= 3:
+                self.geometric_complex = AlphaGeometricComplex(
+                    cleaned_points, self.x_range, self.y_range,
+                    full_initialisation=True)
+            elif self.dimension >= 4:
+                self.geometric_complex = RipsGeometricComplex(
+                    cleaned_points, self.x_range, self.y_range,
+                    full_initialisation=True)
 
             self.extrema.append({
-                "maxima": self.geometric_complex.maxima,
-                "minima": self.geometric_complex.minima
+                "maxima": list(self.geometric_complex.maxima),
+                "minima": list(self.geometric_complex.minima)
                 })
 
             self.persistence_pairs.append(
                 {"x_filtration_H0":
-                    [f.h_0 for f in self.geometric_complex.x_filtrations],
+                    self.geometric_complex.filtrations[
+                        'X'].homology_0['dying'],
                  "x_inv_filtration_H0":
-                    [f.h_0 for f in self.geometric_complex.x_inv_filtrations],
+                    self.geometric_complex.filtrations[
+                        'X_inverted'].homology_0['dying'],
                  "y_filtration_H0":
-                    [f.h_0 for f in self.geometric_complex.y_filtrations],
+                    self.geometric_complex.filtrations[
+                        'Y'].homology_0['dying'],
                  "y_inv_filtration_H0":
-                    [f.h_0 for f in self.geometric_complex.y_inv_filtrations]})
+                    self.geometric_complex.filtrations[
+                        'Y_inverted'].homology_0['dying']})
 
     def save_topological_summary(self):
         """
