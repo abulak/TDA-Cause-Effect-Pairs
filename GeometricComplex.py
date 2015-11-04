@@ -1,6 +1,12 @@
 import numpy as np
 import logging
+import os
+import sys
 import FilteredComplex as FC
+
+path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir,
+                                    os.pardir))
+sys.path.append(os.path.join(path, "Dionysus-python3/build/bindings/python"))
 
 
 class GeometricComplex:
