@@ -51,8 +51,13 @@ def workflow(filename, size=1000):
         masked_points = ma.MaskedArray(points)
         for i in column_blacklist:
             masked_points[:, i] = ma.masked
-        logging.info("Discarded %d columns in total", len(column_blacklist))
-        new_shape = (raw_data.shape[0], raw_data.shape[1]-len(column_blacklist))
+
+        new_shape = (points.shape[0], points.shape[1]-len(column_blacklist))
+        logging.debug("Old shape: %s, New_shape: %s", str(points.shape),
+                      str(new_shape))
+        logging.debug("Length of compressed points: %d",
+                      len(masked_points.compressed()))
+        
         points = masked_points.compressed().reshape(new_shape)
 
     std_points = standardise(points)
