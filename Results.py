@@ -87,11 +87,18 @@ class PairsResults:
             stability.append(max_score)
         return stability
 
-    def decide_causality(self, threshold=0):
+    def decide_causality(self, weight_function='uniform', p=0):
         """
-        Decides pair causality taking into account all persistence diagrams.
-        :param threshold: float:    if confidence is below the threshold do not
-                                    decide the causality
+        Decides pair causality taking into account all persistence scores.
+        By default we weight all scores uniformly, but You may supply any
+        function from range(len(outliers)) -> R as weighting. Built-in can be
+        accesed also as strings (l stands for len(outliers)):
+        'uniform'   f(x) = 1
+        'triangle'  f(x) = -abs(x-l/2) + l/2
+        'gaussian'  f(x) = exp( (x-l/2)**2 / 2(l/6)**2
+        where 'triangle' and 'gaussian' are
+        :param weight_function: function used to weight scores
+        :param p: float: to determine Wasserstein distance (0 => bottleneck)
         :return: 0:  if undecided
                  1:  if X -> Y
                 -1:  if Y -> X
@@ -108,14 +115,26 @@ class PairsResults:
             self.compute_score_stability(self.Y_inv_diagrams))
 
         l = self.X_distances.shape[0]
-
-        def weighting_function(x):
-            # return 1.0
-            return -np.abs(x - l/2) + l/2
-            # return np.exp(-np.power(x - l/2, 2.0) / (2 * np.power(l/6, 2.0)))
-
         domain = np.arange(0, l, 1)
-        w = weighting_function(domain)
+
+        if type(weight_function) == type(lambda x: x):
+            pass
+        elif weight_function == 'uniform':
+            def weight_function(x):
+                return 1.0 + 0*x
+        elif weight_function == 'triangle':
+            def weight_function(x):
+                return -np.abs(x - l/2) + l/2
+        elif weight_function == 'gaussian':
+            def weight_function(x):
+                return np.exp(-np.power(x - l/2, 2) /
+                              (2 * np.power(l/6, 2)))
+        else:
+            def weight_function(x):
+                return 1.0 + 0*x
+            print("unknown_function!, using uniform!")
+
+        w = weight_function(domain)
         weighting = w/sum(w)
 
         x_integral = np.dot(weighting,
