@@ -72,17 +72,17 @@ class PairsResults:
         self.Y_inv_diagrams = [out.Y_inverted
                                for out in persistence_diagrams]
 
-    def compute_score_stability(self, persistence_diagrams, p=0):
+    def compute_score_stability(self, persistence_diagrams_out, p=0):
         """
         Computes scores stability for a list (outlier indexed) of directions
-        :param persistence_diagrams: list of the diagrams of direction
+        :param persistence_diagrams_out: list of the diagrams of direction
                                      (i.e. indexed by outliers)
         :param p: float:    determines which p-Wasserstein metric to use
         :return: list:      of scores
         """
 
         stability = []
-        for _ in persistence_diagrams:
+        for out in persistence_diagrams_out:
             scores = []
             for diagram in persistence_diagrams:
                 scores.append(self.distance(diagram, p))
