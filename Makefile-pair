@@ -5,6 +5,15 @@
 
 PYTHON = $(shell which python3)
 
+MULTIFILE := ../../multidim-pairs
+
+MULTIPAIRS := $(basename $(shell cat $(MULTIFILE)))
+
+ifneq ($(filter $(PAIR), $(MULTIPAIRS)))
+    SCRIPT = ../../TDA.py
+else
+    SCRIPT = ../../pair-multiprocessing.py
+
 allall: knn all
 
 knn: diagrams_knn 
@@ -12,10 +21,10 @@ knn: diagrams_knn
 all: diagrams_all
 
 scores_knn diagrams_knn: outliers_knn
-	$(PYTHON) ../../TDA.py "knn"
+	$(PYTHON) $(SCRIPT) "knn"
 
 scores_all diagrams_all : outliers_all
-	$(PYTHON) ../../TDA.py "all"
+	$(PYTHON) $(SCRIPT) "all"
 
 outliers_knn: std_points
 	$(PYTHON) ../../identify-outliers.py "knn"
@@ -27,7 +36,8 @@ std_points:
 	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE)
 
 print:
-	@echo $(PAIRS)
+	@echo $(PAIR)
+	@echo
 .PHONY: clean
 
 clean:
