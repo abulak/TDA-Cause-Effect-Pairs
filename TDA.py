@@ -43,8 +43,6 @@ class CauseEffectPair:
 
         self.prepare_points()
 
-        self.compute_topological_summary()
-
     def prepare_points(self):
 
         std_points_file = os.path.join(self.current_dir, "std_points")
@@ -83,51 +81,55 @@ class CauseEffectPair:
         y_filtration_H0
         y_inv_filtration_H0
 
-        values are arrays of persistance pairs
+        values are lists of persistence pairs
         """
+        results = [self.single_outlier(i) for i in range(len(self.outliers))]
 
-        self.persistence_pairs = []
-        self.extrema = []
-        for i, outlier in enumerate(self.outliers, start=1):
-            logging.info("Outlier: %d of %d", i, self.outliers.shape[0])
+        self.extrema = [x[0] for x in results]
+        self.persistence_pairs = [x[1] for x in results]
 
-            cleaned_points = self.remove_outliers(i)
-            if self.dimension <= 3:
-                self.geometric_complex = GC.AlphaGeometricComplex(
-                    cleaned_points, self.x_range, self.y_range,
-                    full_initialisation=True)
-            elif self.dimension >= 4:
-                self.geometric_complex = GC.RipsGeometricComplex(
-                    cleaned_points, self.x_range, self.y_range,
-                    full_initialisation=True)
+    def single_outlier(self, i):
+        logging.info("Outlier: %d of %d", i+1, self.outliers.shape[0])
 
-            self.extrema.append({
-                "maxima": list(self.geometric_complex.maxima),
-                "minima": list(self.geometric_complex.minima)
-                })
+        cleaned_points = self.remove_outliers(i)
+        if self.dimension <= 3:
+            geometric_cmplx = GC.AlphaGeometricComplex(
+                cleaned_points, self.x_range, self.y_range,
+                full_initialisation=True)
+        else:  # i.e. self.dimension >= 4:
+            geometric_cmplx = GC.RipsGeometricComplex(
+                cleaned_points, self.x_range, self.y_range,
+                full_initialisation=True)
 
-            self.persistence_pairs.append(
-                {"X":
-                    self.get_homology('X', range(len(self.x_range))),
-                 "X_inverted":
-                    self.get_homology('X_inverted', range(len(self.x_range))),
-                 "Y":
-                    self.get_homology('Y', range(len(self.y_range))),
-                 "Y_inverted":
-                    self.get_homology('Y_inverted', range(len(self.y_range)))})
+        extrema = {"maxima": list(geometric_cmplx.maxima),
+                   "minima": list(geometric_cmplx.minima)}
 
-    def get_homology(self, direction, dim_range):
+        persistence_pairs ={
+            "X": self.get_homology(geometric_cmplx, 'X',
+                                   range(len(self.x_range))),
+            "X_inverted": self.get_homology(geometric_cmplx, 'X_inverted',
+                                            range(len(self.x_range))),
+            "Y": self.get_homology(geometric_cmplx, 'Y',
+                                   range(len(self.y_range))),
+            "Y_inverted": self.get_homology(geometric_cmplx, 'Y_inverted',
+                                            range(len(self.y_range)))}
+        logging.info("Outlier: %d of finished!", i+1)
+        return extrema, persistence_pairs
+
+    @staticmethod
+    def get_homology(g_complex, direction, dim_range):
         """
         Fetches finite-lived (i.e. 'dying') homology pairs of
-        self.geometric_complex filtered in direction given by 'direction,
+        g_complex filtered in direction given by 'direction,
         accross the dimension range dim_range (as list)
+        :param g_complex: GeometricComplex.GeometricComplex object
         :param direction: string: one of 'X', 'Y', 'X_inverted', 'Y_inverted'
         :param dim_range: iterator: over dimensions in given direction,
                                     starts from 0
         :return: list: (indexed by range) of dying homology pairs
         """
         filtered_complexes = [
-            self.geometric_complex.filtered_complexes[direction][i]
+            g_complex.filtered_complexes[direction][i]
             for i in dim_range]
         homology = [x.homology_0['dying'] for x in filtered_complexes]
         return homology
@@ -164,6 +166,7 @@ class CauseEffectPair:
 
 def workflow(model):
     p = CauseEffectPair(model)
+    p.compute_topological_summary()
     p.save_topological_summary()
 
 if __name__ == "__main__":
