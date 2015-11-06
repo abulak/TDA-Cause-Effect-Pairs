@@ -95,6 +95,8 @@ class PairsResults:
     def decide_causality(self, weight_function='uniform', p=0):
         """
         Decides pair causality taking into account all persistence scores.
+        Returns BOTH: causality and confidence score
+
         By default we weight all scores uniformly, but You may supply any
         function from range(len(outliers)) -> R as weighting. Built-in can be
         accesed also as strings (l stands for len(outliers)):
@@ -104,9 +106,10 @@ class PairsResults:
         where 'triangle' and 'gaussian' are
         :param weight_function: function used to weight scores
         :param p: float: to determine Wasserstein distance (0 => bottleneck)
-        :return: 0:  if undecided
-                 1:  if X -> Y
-                -1:  if Y -> X
+        :return[0]: 0:  if undecided
+                    1:  if X -> Y
+                   -1:  if Y -> X
+        :return[1]: float: confidence score
         """
 
         self.X_distances = np.array(
@@ -147,14 +150,14 @@ class PairsResults:
         y_integral = np.dot(weighting,
                             np.maximum(self.Y_distances, self.Y_inv_distances))
 
-        self.confidence = np.abs(x_integral - y_integral)
+        confidence = np.abs(x_integral - y_integral)
 
-        if self.confidence <= threshold:
+        if confidence == 0:
             causality = 0
         else:
-            causality = int((y_integral - x_integral)/np.abs(y_integral -
-                                                             x_integral))
-        return causality
+            causality = int((y_integral - x_integral)/np.abs(x_integral -
+                                                             y_integral))
+        return causality, confidence
 
     def distance(self, persistence_diagram, p=0):
         """
