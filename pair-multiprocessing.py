@@ -1,13 +1,7 @@
-import numpy as np
-import random
 import sys
-import os
-import logging
 
+import multiprocessing as mproc
 import TDA as tda
-import GeometricComplex as GC
-
-sampler = __import__("point-sampler")
 
 
 class MultiCoreCauseEffectPair(tda.CauseEffectPair):
@@ -34,10 +28,9 @@ class MultiCoreCauseEffectPair(tda.CauseEffectPair):
         values are arrays of persistance pairs
         """
 
-        import multiprocessing as mproc
         mproc.set_start_method('forkserver')
         arguments = [i for i in range(len(self.outliers))]
-        with mproc.Pool(processes=mproc.cpu_count()) as pool:
+        with mproc.Pool(processes=int(mproc.cpu_count()/2)) as pool:
             results = pool.map(self.single_outlier, arguments)
 
         self.extrema = [x[0] for x in results]
@@ -54,61 +47,3 @@ if __name__ == "__main__":
         workflow(sys.argv[1])
     else:
         print("Usage: pair-multiprocessing.py $MODEL")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-
-    random.seed(0)
-
-    blacklist = ['pair0023.txt',
-                 'pair0033.txt',
-                 'pair0037.txt',
-                 'pair0047.txt',
-                 'pair0070.txt']
-
-    if len(sys.argv) == 3:
-        filename = sys.argv[1]
-        size = int(sys.argv[2])
-        if filename not in blacklist:
-            workflow(filename, size)
-        else:
-            print(filename, "is blacklisted! (it doesn't fit the model?)")
-    else:
-        print("Usage: points-sampler.py $FILENAME $SIZE")

@@ -7,12 +7,13 @@ PYTHON = $(shell which python3)
 
 MULTIFILE := ../../multidim-pairs
 
-MULTIPAIRS := $(basename $(shell cat $(MULTIFILE)))
+MULTIPAIRS := $(shell cat $(MULTIFILE))
 
-ifneq ($(filter $(PAIR), $(MULTIPAIRS)))
+ifeq ($(filter $(PAIR), $(MULTIPAIRS)),)
     SCRIPT = ../../TDA.py
 else
     SCRIPT = ../../pair-multiprocessing.py
+endif
 
 allall: knn all
 
@@ -36,8 +37,11 @@ std_points:
 	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE)
 
 print:
+	@echo $(MULTIPAIRS)
 	@echo $(PAIR)
-	@echo
+	@echo $(SCRIPT)
+	@echo $(filter $(PAIR), $(MULTIPAIRS))
+
 .PHONY: clean
 
 clean:
