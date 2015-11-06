@@ -84,8 +84,9 @@ class PairsResults:
         stability = []
         for out in persistence_diagrams_out:
             scores = []
-            for diagram in persistence_diagrams:
-                scores.append(self.distance(diagram, p))
+            for diagram in out:
+                d = self.distance(diagram, p)
+                scores.append(d)
             max_score = max(scores)
 
             stability.append(max_score)
@@ -196,11 +197,12 @@ class OutlierPersistence:
         projection_list = diagrams_dict[direction]
         persistence_diagrams_list = []
         for diagram in projection_list:
-            p_diagram = dionysus.PersistenceDiagram(0)
+            p_list=[]
             if not diagram:
                 diagram = [(0, 0)]
             for pair in diagram:
-                    p_diagram.append(tuple(pair))
+                    p_list.append(tuple(pair))
+            p_diagram = dionysus.PersistenceDiagram(0, p_list)
             persistence_diagrams_list.append(p_diagram)
 
         return persistence_diagrams_list
