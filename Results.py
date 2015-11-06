@@ -27,7 +27,7 @@ class PairsResults:
     empty_diagram = dionysus.PersistenceDiagram(0)
     empty_diagram.append((0, 0))
 
-    def __init__(self, name, path_to_diagrams, threshold=0):
+    def __init__(self, name, path_to_diagrams):
         if name[-4:] == '.txt':
             name = name[:-4]
         self.name = name
@@ -46,7 +46,7 @@ class PairsResults:
 
         self.prepare_persistence_diagrams(path_to_diagrams)
 
-        self.causality_inferred = self.decide_causality(threshold)
+        self.causality_inferred, self.confidence = self.decide_causality()
 
     def prepare_persistence_diagrams(self, path):
         """
@@ -109,14 +109,14 @@ class PairsResults:
         """
 
         self.X_distances = np.array(
-            self.compute_score_stability(self.X_diagrams))
+            self.compute_score_stability(self.X_diagrams, p))
         self.X_inv_distances = np.array(
-            self.compute_score_stability(self.X_inv_diagrams))
+            self.compute_score_stability(self.X_inv_diagrams, p))
 
         self.Y_distances = np.array(
-            self.compute_score_stability(self.Y_diagrams))
+            self.compute_score_stability(self.Y_diagrams, p))
         self.Y_inv_distances = np.array(
-            self.compute_score_stability(self.Y_inv_diagrams))
+            self.compute_score_stability(self.Y_inv_diagrams, p))
 
         l = self.X_distances.shape[0]
         domain = np.arange(0, l, 1)
