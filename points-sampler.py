@@ -43,7 +43,7 @@ def workflow(filename, size=1000):
 
     for i in range(dimension):
         column_blacklist = []
-        if np.isnan(np.dot(points[:,i],points[:,i])):
+        if np.isnan(np.dot(points[:, i], points[:, i])):
             logging.info("Column %d contains Nan(s). Discarding", i)
             column_blacklist.append(i)
     if column_blacklist:

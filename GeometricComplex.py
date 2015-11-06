@@ -10,7 +10,6 @@ sys.path.append(os.path.join(path, "Dionysus-python3/build/bindings/python"))
 
 
 class GeometricComplex:
-
     """Class abstracting geometric complex on a given set of points in R^d.
     The points need to be standardised!
     Attributes:
@@ -89,9 +88,14 @@ class GeometricComplex:
         return simplex
 
     def sweep_function(self, simplex, inverse):
-        """ Given a simplex returns max value of the orthogonal projection
+        """
+        Given a simplex returns max value of the orthogonal projection
         on the axis.
-        If inverse is set to true, it returns min value """
+        If inverse is set to true, it returns min value
+        :param simplex: dionysus.Simplex object
+        :param inverse: bool
+        :return: float
+        """
 
         # this turns out to be much (20?!) faster than list(simplex.vertices)
         vertices = simplex.vertices
@@ -126,10 +130,17 @@ class GeometricComplex:
             p -= mean
             p /= std
 
-    def get_real_edges_from_smpl(self, edges, points):
-        """Computes the real edges of a filtration; returns list ready to
+    @staticmethod
+    def get_real_edges_from_smpl(edges, points):
+        """
+        Computes the real edges coordinates; returns list ready to
         supply to LineCollection
-        i.e. list of tuples ((begin_x,begin_y), (end_x,end_y))"""
+        i.e. list of tuples ((begin_x,begin_y), (end_x,end_y))
+        :param edges: list of edges (simplicial ones)
+        :param points: list of points (real coordinates)
+        :return: list of tuples of tuples
+        """
+
         lines = []
         for edge in edges:
             begin = points[edge[0]]
@@ -174,8 +185,9 @@ class RipsGeometricComplex(GeometricComplex):
         Creates the SORTED full neighbouring graph of the Vietoris-Rips complex.
         Note that VR complex may quickly become huge for dense datasets.
         We restrict to 1-skeleton (ie. points & edges) and build edges of
-        length  2*sqrt(3).
-        This relies on the assumption that we deal with STANDARDISED DATA
+        length at most radius.
+        :param radius: float
+        :return: return dionysus.Filtration object
         """
 
         logging.info("Using Rips-complex with radius %f. This may be slow "
@@ -189,7 +201,7 @@ class RipsGeometricComplex(GeometricComplex):
         """
         Bruteforce creation of neighbouring graph
         :param radius: float
-        :return: dionysus weighted filtration of neighbouring graph
+        :return: dionysus.Filtration: weighted filtration of neighbouring graph
         """
         from scipy.spatial.distance import cdist
         distances = cdist(self.points, self.points)
@@ -205,7 +217,21 @@ class RipsGeometricComplex(GeometricComplex):
         return full_complex
 
     def compute_the_last_death(self, radius):
-        """finds the minimal filtration s.t. the full_complex is connected"""
+        """
+        finds the minimal filtration s.t. self.full_complex is connected.
+        It builds FilteredComplex object on dion_complex, computes its
+        0-th homology and finds the last death (i.e. the minimal radius
+        parameter that will make the VR-radius complex connected).
+
+        If the full_complex is not connected it doubles the radius, creates
+        self.full_complex again and repeats.
+
+        :param radius: float:   radius that was used to build full_complex in
+                                the first place
+        :return: float:         the minimal radius that we need for building
+                                limited_complex
+        """
+
         connected = False
         while not connected:
             z = FC.FilteredComplex(self.full_complex)
@@ -246,7 +272,8 @@ class AlphaGeometricComplex(GeometricComplex):
     def create_full_complex(self):
         """
         Creates the SORTED alpha complex (i.e. dionysus object) on
-        self.points"""
+        self.points
+        """
         full_complex = self.dionysus.Filtration()
         self.dionysus.fill_alpha_complex(self.points.tolist(),
                                          full_complex)
@@ -260,6 +287,7 @@ class AlphaGeometricComplex(GeometricComplex):
     def compute_the_last_death(self):
         """finds the minimal filtration s.t. the full_complex is connected
         It assumes that the complex will is CONNECTED (as alpha complexes are).
+        Faster than Rips version
         """
         full_persistence = self.dionysus.StaticPersistence(self.full_complex)
         full_persistence.pair_simplices()
@@ -268,4 +296,3 @@ class AlphaGeometricComplex(GeometricComplex):
         deaths = [smap[i.pair()].data[0] for i in full_persistence
                   if smap[i].dimension() == 0]
         return max(deaths)
-

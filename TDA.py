@@ -116,9 +116,19 @@ class CauseEffectPair:
                  "Y_inverted":
                     self.get_homology('Y_inverted', range(len(self.y_range)))})
 
-    def get_homology(self, key, range):
+    def get_homology(self, direction, dim_range):
+        """
+        Fetches finite-lived (i.e. 'dying') homology pairs of
+        self.geometric_complex filtered in direction given by 'direction,
+        accross the dimension range dim_range (as list)
+        :param direction: string: one of 'X', 'Y', 'X_inverted', 'Y_inverted'
+        :param dim_range: iterator: over dimensions in given direction,
+                                    starts from 0
+        :return: list: (indexed by range) of dying homology pairs
+        """
         filtered_complexes = [
-            self.geometric_complex.filtered_complexes[key][i] for i in range]
+            self.geometric_complex.filtered_complexes[direction][i]
+            for i in dim_range]
         homology = [x.homology_0['dying'] for x in filtered_complexes]
         return homology
 
