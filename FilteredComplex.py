@@ -37,22 +37,18 @@ class FilteredComplex:
         self.persistence.pair_simplices()
         self.smap = self.persistence.make_simplex_map(fcomplex)
 
-    def distance(self, persistence_diagram, p=0):
-        """Returns p-th Wasserstein distance between the filtration's 0-diagram
-        and the empty diagram.
-        If p=0 then the bottleneck is returned.
-
-        TODO: higher dimensions"""
-
-        if p > 0:
-            return self.dionysus.wasserstein_distance(
-                persistence_diagram, self.empty_diagram, p)
-        else:
-            return self.dionysus.bottleneck_distance(
-                persistence_diagram, self.empty_diagram)
-
     def compute_homology(self, dimension=0):
-        """ Computes the homology persistence pairs for the filtered complex"""
+        """
+        Computes the homology persistence pairs for the filtered complex in
+        the given dimension. Persistence pairs are grouped into two group:
+        'undying':  (birth, float('inf'))
+        'dying':    (birth, death)
+
+        Group names serve as keys in the returned dictionary.
+
+        :param dimension: int: the dimension
+        :return: dictionary of homology persistence pairs
+        """
 
         logging.debug("Computing 0-th Persistence Homology Pairs")
 
