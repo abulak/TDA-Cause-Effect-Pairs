@@ -5,6 +5,10 @@ import numpy as np
 import json
 import logging
 
+import re
+
+import matplotlib.pyplot as plt
+
 back_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 sys.path.append(os.path.join(back_path,
                              "Dionysus-python3/build/bindings/python"))
@@ -200,3 +204,70 @@ class OutlierPersistence:
             persistence_diagrams_list.append(p_diagram)
 
         return persistence_diagrams_list
+
+
+class Analysis:
+
+    def __init__(self, prefix='test', outlier_model='knn'):
+
+        self.prefix = prefix
+
+        pattern = re.compile('pair[0-9]{4,}$')
+        prefix_path = os.path.join(os.getcwd(), prefix)
+        dir_list = sorted([x for x in os.listdir(prefix_path)
+                           if pattern.match(x)])
+        self.pairs = []
+
+        for directory in dir_list:
+            pair_dir = os.path.join(os.getcwd(), prefix, directory)
+            if outlier_model == 'knn':
+                path_to_diagrams = os.path.join(pair_dir, "diagrams_knn")
+            elif outlier_model == 'all':
+                path_to_diagrams = os.path.join(pair_dir, "diagrams_all")
+            else:
+                logging.warning("Results for model: %s not computed in %s",
+                                str(outlier_model), str(outlier_model))
+                path_to_diagrams = ''
+            self.pairs.append(PairsResults(directory, path_to_diagrams))
+
+        self.regenerate_results()
+
+    def generate_causality_confidence(self):
+        result = np.array([
+            [pair.causality_inferred, pair.weight, pair.confidence,
+             pair.causality_true] for pair in self.pairs])
+        return result
+
+    def regenerate_results(self, function='uniform', p=0):
+
+        for pair in self.pairs:
+            pair.causality_inferred, pair.confidence = \
+                pair.decide_causality(weight_function=function, p=p)
+
+        self.pairs.sort(key=lambda x: x.confidence, reverse=True)
+        self.pairs_causality_confidence = self.generate_causality_confidence()
+
+    def weighted_efficiency(self):
+        decisions = self.pairs_causality_confidence[:, 0]
+        ground_truth = self.pairs_causality_confidence[:, 3]
+        decisions_right = np.array([decisions[i] == ground_truth[i] for i in
+                                    range(len(decisions))])
+        weights = self.pairs_causality_confidence[:, 1]
+        weighted_decisions = decisions_right*weights
+
+        weighted_efficiency = []
+        for i in range(1, len(self.pairs)):
+            entry = sum(weighted_decisions[:i])/sum(weights[:i])
+            weighted_efficiency.append(entry)
+        return weighted_efficiency
+
+    def accuracy_plot(self, threshold=0):
+        all_decisions_efficiency = self.weighted_efficiency()
+        plt.plot(all_decisions_efficiency, color='black', alpha=0.3)
+        m = len([0 for x in self.pairs_causality_confidence if x[2] >=
+                 threshold])
+        to_plot = all_decisions_efficiency[:m]
+        plt.plot(to_plot, alpha=0.6, label=self.prefix)
+        plt.ylim(0, 1.03)
+        print(self.prefix, "Decisions taken:", m)
+        print(self.prefix, "Final accuracy rate:", to_plot[-1])
