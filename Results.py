@@ -266,13 +266,13 @@ class Analysis:
             weighted_efficiency.append(entry)
         return weighted_efficiency
 
-    def accuracy_plot(self, threshold=0):
+    def accuracy_plot(self, threshold=0, **kwargs):
         all_decisions_efficiency = self.weighted_efficiency()
         plt.plot(all_decisions_efficiency, color='black', alpha=0.3)
         m = len([0 for x in self.pairs_causality_confidence if x[2] >=
                  threshold])
         to_plot = all_decisions_efficiency[:m]
-        plt.plot(to_plot, alpha=0.6, label=self.prefix)
+        plt.plot(to_plot, alpha=0.6, label=self.prefix, **kwargs)
         plt.ylim(0, 1.03)
         print(self.prefix, "Decisions taken:", m)
         print(self.prefix, "Final accuracy rate:", to_plot[-1])
