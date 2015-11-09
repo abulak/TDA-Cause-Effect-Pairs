@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import sys
 import os
 import logging
@@ -35,7 +34,7 @@ def workflow(filename, size=1000):
                      size)
         points = raw_data
     else:
-        np.random.seed(0)
+        # np.random.seed(0)
         logging.info("Data contains more points than %d. Sampling.",
                      size)
         indices = np.random.randint(0, raw_data.shape[0], size)
@@ -65,8 +64,6 @@ def workflow(filename, size=1000):
     logging.info("Sampling Done!")
 
 if __name__ == '__main__':
-
-    random.seed(0)
 
     blacklist = ['pair0023.txt',
                  'pair0033.txt',
