@@ -90,7 +90,7 @@ class CauseEffectPair:
 
     def single_outlier(self, i):
         logging.info("Outlier: %d of %d", i+1, self.outliers.shape[0])
-
+        # print(i, end=' ', flush=True)
         cleaned_points = self.remove_outliers(i)
         if self.dimension <= 3:
             geometric_cmplx = GC.AlphaGeometricComplex(
