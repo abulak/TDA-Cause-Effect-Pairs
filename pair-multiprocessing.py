@@ -3,11 +3,38 @@ import sys
 import multiprocessing as mproc
 import TDA as tda
 
+import logging
+import logging.handlers
+
+
+def initPool(queue, level):
+    logger = logging.getLogger('')
+    logger.addHandler(logging.handlers.QueueHandler(queue))
+    logger.setLevel(level)
 
 class MultiCoreCauseEffectPair(tda.CauseEffectPair):
 
     def __init__(self, model):
+
         tda.CauseEffectPair.__init__(self, model)
+        # self.queue = mproc.Queue(100)
+        # self.logging_listener()
+
+
+    def logging_listener(self):
+
+        logger = logging.getLogger()
+
+        while True:
+            try:
+                record = self.queue.get()
+                if record is None:
+                    break
+                logger.handle(record)
+            except Exception:
+                import traceback
+                print('Whoops! Problem:', file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
 
     def compute_topological_summary(self):
         """
