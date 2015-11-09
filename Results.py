@@ -272,7 +272,7 @@ class Analysis:
         m = len([0 for x in self.pairs_causality_confidence if x[2] >=
                  threshold])
         to_plot = all_decisions_efficiency[:m]
-        plt.plot(to_plot, alpha=0.6, label=self.prefix, **kwargs)
+        plt.plot(to_plot, label=self.prefix, **kwargs)
         plt.ylim(0, 1.03)
         print(self.prefix, "Decisions taken:", m)
         print(self.prefix, "Final accuracy rate:", to_plot[-1])
