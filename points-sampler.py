@@ -25,7 +25,8 @@ def digitise(points):
     """
     number_of_bins = [len(set(points[:, i]))
                       for i in range(points.shape[1])]
-    print("bins:", number_of_bins)
+    logging.info("Numbers of different values along axes (bins): %s",
+                 str(number_of_bins))
     m = min(number_of_bins)
     for i in range(points.shape[1]):
         points[:, i] = fit_to_bins(points[:, i], m)
