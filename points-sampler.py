@@ -7,13 +7,45 @@ import logging
 def standardise(points):
     """Standardise self.points, i.e.
     mean = 0 and standard deviation = 1 in both dimensions"""
-    for i in range(points[0].shape[0]):
+    for i in range(points.shape[1]):
         p = points[:, i]
         mean = np.mean(p)
         std = np.std(p)
         p -= mean
         p /= std
     return points
+
+
+def digitise(points):
+    """
+    if one of the axes in points is heavily digitised, digitise all the other
+    to the same number of bins.
+    :param points: np.array
+    :return: np.array: digitised points to the same number of bins
+    """
+    number_of_bins = [len(set(points[:, i]))
+                      for i in range(points.shape[1])]
+    print("bins:", number_of_bins)
+    m = min(number_of_bins)
+    for i in range(points.shape[1]):
+        points[:, i] = fit_to_bins(points[:, i], m)
+
+    return points
+
+
+def fit_to_bins(column, m):
+    """
+    fits values in column to m equally spaced bins between column.min() and
+    column.max()
+    :param column: np.array of shape (n,1)
+    :param m: int: number of bins
+    :return: the column of values rounded to the center of the nearest bin
+    """
+    bins, step = np.linspace(column.min(), column.max()+0.001, m+1,
+                             retstep=True)
+    inds = np.digitize(column, bins)
+    digitised = np.array([bins[i]-step/2 for i in inds])
+    return digitised
 
 
 def workflow(filename, size=1000):
@@ -40,8 +72,8 @@ def workflow(filename, size=1000):
         indices = np.random.randint(0, raw_data.shape[0], size)
         points = raw_data[indices]
 
+    column_blacklist = []
     for i in range(dimension):
-        column_blacklist = []
         if np.isnan(np.dot(points[:, i], points[:, i])):
             logging.info("Column %d contains Nan(s). Discarding", i)
             column_blacklist.append(i)
@@ -59,9 +91,13 @@ def workflow(filename, size=1000):
         
         points = masked_points.compressed().reshape(new_shape)
 
-    std_points = standardise(points)
+    p1 = standardise(points)
+    p2 = digitise(p1)
+    std_points = standardise(p2)
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
     logging.info("Sampling Done!")
+
+
 
 if __name__ == '__main__':
 
