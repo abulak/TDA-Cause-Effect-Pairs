@@ -128,7 +128,8 @@ class GeometricComplex:
             mean = np.mean(p)
             std = np.std(p)
             p -= mean
-            p /= std
+            if std:
+                p /= std
 
     @staticmethod
     def get_real_edges_from_smpl(edges, points):

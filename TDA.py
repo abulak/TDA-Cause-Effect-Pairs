@@ -50,7 +50,12 @@ class CauseEffectPair:
         self.dimension = int(self.std_points.shape[1])
 
         outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
-        self.outliers = np.loadtxt(outliers_file).astype(np.int)
+
+        outliers = np.loadtxt(outliers_file).astype(np.int)
+        o, index = np.unique(outliers, return_index=True)
+        self.outliers = np.zeros(index.shape[0])
+        for i in index:
+            self.outliers[i] = outliers[i]
 
     def remove_outliers(self, i):
         """
