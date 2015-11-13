@@ -8,8 +8,8 @@ endif
 
 PYTHON = $(shell which python3)
 
-# FILE := all-pairs
-FILE := fast-pairs
+# FILE := all_pairs
+FILE := fast_pairs
 PAIRS := $(basename $(shell cat $(FILE)))
 
 default: knn
