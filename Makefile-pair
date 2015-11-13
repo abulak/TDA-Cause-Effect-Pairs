@@ -5,7 +5,7 @@
 
 PYTHON = $(shell which python3)
 
-MULTIFILE := ../../multidim-pairs
+MULTIFILE := ../../large-pairs
 
 MULTIPAIRS := $(shell cat $(MULTIFILE))
 
