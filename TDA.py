@@ -6,8 +6,7 @@ import logging
 
 import GeometricComplex as GC
 
-path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir,
-                                    os.pardir))
+path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir))
 sys.path.append(os.path.join(path, "Dionysus-python3/build/bindings/python"))
 
 
