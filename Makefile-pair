@@ -5,15 +5,17 @@
 
 PYTHON = $(shell which python3)
 
-MULTIFILE := ../../large-pairs
+MULTIPROCESS_FILE := ../../large_pairs
 
-MULTIPAIRS := $(shell cat $(MULTIFILE))
+MULTIPROCESS_PAIRS := $(shell cat $(MULTIPROCESS_FILE))
 
-ifeq ($(filter $(PAIR), $(MULTIPAIRS)),)
+ifeq ($(filter $(PAIR), $(MULTIPROCESS_PAIRS)),)
     SCRIPT = ../../TDA.py
 else
     SCRIPT = ../../pair-multiprocessing.py
 endif
+
+default: knn
 
 allall: knn all
 
