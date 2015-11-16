@@ -275,7 +275,8 @@ class Analysis:
                  threshold])
         to_plot = weighted_efficiency[:m]
         percentage = np.linspace(0, 100, decisions.shape[0])
-        plt.plot(percentage[:m], to_plot, label=label, **kwargs)
-        plt.ylim(0, 1.03)
+        # plt.plot(percentage[:m],to_plot, label=label, **kwargs)
+        plt.plot(to_plot, label=label, **kwargs)
+        plt.ylim(0.4, 1.03)
         print(label, "Decisions taken:", m)
         print(label, "Final accuracy rate:", to_plot[-1])
