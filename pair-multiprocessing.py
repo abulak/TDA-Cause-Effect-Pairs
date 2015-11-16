@@ -57,7 +57,7 @@ class MultiCoreCauseEffectPair(tda.CauseEffectPair):
 
         mproc.set_start_method('forkserver')
         arguments = [i for i in range(len(self.outliers))]
-        with mproc.Pool(processes=int(mproc.cpu_count()/2)) as pool:
+        with mproc.Pool(processes=int(mproc.cpu_count())) as pool:
             results = pool.map(self.single_outlier, arguments)
 
         self.extrema = [x[0] for x in results]
