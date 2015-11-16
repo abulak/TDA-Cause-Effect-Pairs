@@ -29,8 +29,8 @@ $(PAIRS): $$(addsuffix .knn, $$@) $$(addsuffix .all, $$@)
 
 $(addsuffix .knn, $(PAIRS)): prefix
 	mkdir -p $(PREFIX)/$(basename $@)
-	cd $(PREFIX)/$(basename $@) &&\
-	$(MAKE) -f ../../Makefile-pair knn PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE)
+	cp ./Makefile-pair $(PREFIX)/$(basename $@)/Makefile
+	$(MAKE) -C $(PREFIX)/$(basename $@) knn PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE)
 
 $(addsuffix .all, $(PAIRS)): prefix
 	mkdir -p $(PREFIX)/$(basename $@)
