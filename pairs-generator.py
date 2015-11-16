@@ -1,9 +1,9 @@
 import subprocess
 
-for i in range(10, 20):
-    prefix = 'sampled-600_'+'{0:03d}'.format(i)
+for i in range(1, 2):
+    prefix = '{0:03d}'.format(i)
     print("Starting ", prefix, end=' ')
-    subprocess.call(["make", "-j8", "knn", "PREFIX="+prefix, "SIZE=600"])
+    subprocess.call(["make", "-j1", "knn", "PREFIX="+prefix, "SIZE=2000"])
     print("done", prefix)
 
 
