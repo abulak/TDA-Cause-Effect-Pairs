@@ -16,7 +16,7 @@ def standardise(points):
     return points
 
 
-def digitise(points):
+def quantise(points):
     """
     if one of the axes in points is heavily digitised, digitise all the other
     to the same number of bins.
@@ -92,13 +92,11 @@ def workflow(filename, size=1000):
         
         points = masked_points.compressed().reshape(new_shape)
 
-    p1 = standardise(points)
-    p2 = digitise(p1)
-    std_points = standardise(p2)
+    # p1 = standardise(points)
+    # points = quantise(p1)
+    std_points = standardise(points)
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
     logging.info("Sampling Done!")
-
-
 
 if __name__ == '__main__':
 
