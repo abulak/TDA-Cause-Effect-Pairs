@@ -9,6 +9,18 @@ from sklearn.neighbors import NearestNeighbors
 import scipy.spatial as spsp
 
 
+def standardise(points):
+    """Standardise self.points, i.e.
+    mean = 0 and standard deviation = 1 in both dimensions"""
+    for i in range(points.shape[1]):
+        p = points[:, i]
+        mean = np.mean(p)
+        std = np.std(p)
+        p -= mean
+        p /= std
+    return points
+
+
 class OutlierRemoval:
 
     """A Class encapsulating everything what we do to the pairs-data
@@ -30,7 +42,8 @@ class OutlierRemoval:
         logging.basicConfig(filename=self.name+".log", level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s')
 
-        self.points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
+        points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
+        self.points = standardise(points)
         self.model = model
         self.dimension = self.points[0].shape[0]
 

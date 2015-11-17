@@ -4,18 +4,6 @@ import os
 import logging
 
 
-def standardise(points):
-    """Standardise self.points, i.e.
-    mean = 0 and standard deviation = 1 in both dimensions"""
-    for i in range(points.shape[1]):
-        p = points[:, i]
-        mean = np.mean(p)
-        std = np.std(p)
-        p -= mean
-        p /= std
-    return points
-
-
 def quantise(points):
     """
     if one of the axes in points is heavily digitised, digitise all the other
