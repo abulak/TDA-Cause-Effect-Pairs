@@ -155,8 +155,10 @@ class PairsResults:
         if confidence == 0:
             causality = 0
         else:
-            causality = int((y_integral - x_integral)/np.abs(x_integral -
-                                                             y_integral))
+            if y_integral > x_integral:
+                causality = 1
+            else:
+                causality = -1
         return causality, confidence
 
     def distance(self, persistence_diagram, p=0):
