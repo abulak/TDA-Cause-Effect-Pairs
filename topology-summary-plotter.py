@@ -10,6 +10,10 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
+from GeometricComplex import AlphaGeometricComplex
+from matplotlib.collections import LineCollection
+
+
 class PairTopologyPlotter:
     """
     Outlier Plotter; requires outliers model and assumes outliers_$model and
@@ -21,8 +25,8 @@ class PairTopologyPlotter:
         self.suffix = str(model)
         self.points = np.loadtxt(os.path.join(os.getcwd(), 'std_points'))
 
-        scores_path = os.path.join(os.getcwd(), 'scores_' + self.suffix)
-        self.scores = np.loadtxt(scores_path)
+        # scores_path = os.path.join(os.getcwd(), 'scores_' + self.suffix)
+        # self.scores = np.loadtxt(scores_path)
 
         diagrams_path = os.path.join(os.getcwd(), 'diagrams_' + self.suffix)
         with open(diagrams_path, 'r') as file:
@@ -69,33 +73,55 @@ class PairTopologyPlotter:
         maximal = self.extrema[i]['maxima'][axis]
         ax.set_aspect(1)
         ax.plot([minimal, maximal], [minimal, maximal],
-                color='black', alpha=0.5)
-        points = np.array(self.diagrams[i][filtration])
+                    color='black', alpha=0.5)
+        points = np.array(self.diagrams[i][filtration][0])
 
-
-        if points.shape[0]:  # if the array is not empty...
-            if 'inv' in filtration:
+        if 'inverted' in filtration:
+            if points.any():  # if the array is not empty...
                 points *= -1
-                points += [maximal, maximal]
+                # points += [maximal, maximal]
                 ax.scatter(points[:, 1], points[:, 0],
                            marker='+', s=40, facecolors='none', edgecolors='r')
-            else:
-                points += [minimal, minimal]
-                ax.scatter(points[:, 0], points[:, 1],
-                           marker='+', s=40, facecolors='none', edgecolors='r')
+                for pt in points:
+                    ax.plot([pt[1], pt[0]], [pt[0], pt[0]],
+                            color='black', alpha=0.3)
+        else:
+            # points += [minimal, minimal]
+            ax.scatter(points[:, 0], points[:, 1],
+                       marker='+', s=40, facecolors='none', edgecolors='r')
+            for pt in points:
+                    ax.plot([pt[0], pt[0]], [pt[0], pt[1]],
+                            color='black', alpha=0.3)
 
         ax.legend(loc=4, labels=[filtration], fancybox=True,
                   framealpha=0.5)
 
+    def plot_delaunay(self, i, size=(12, 12)):
+        fig = plt.figure()
+        fig.set_size_inches(size)
+        cleaned_points = self.standardise(self.__mask_points__(i-1))
+        ax = plt.gca()
+        ax.add_collection(self.delaunay_lines(cleaned_points))
+
+        outliers = np.array([self.points[out] for out in self.outliers[:i]])
+        # print(outliers)
+        if outliers.any():
+            plt.scatter(outliers[:, 0], outliers[:, 1],
+                        color='red', alpha=1, s=15)
+
+        plt.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
+                    color='black', alpha=0.7, s=5)
+
+        ax = plt.axes()
+        ax.set_xlim(min(self.points[:,0])-0.5, max(self.points[:,0])+0.5)
+        ax.set_ylim(min(self.points[:,1])-0.5, max(self.points[:,1])+0.5)
+
     def delaunay_lines(self, points):
         # plotting the whole Delaunay triangulation:
-        from TDA import GeometricComplex
-        from matplotlib.collections import LineCollection
 
-        cmplx = GeometricComplex(points, full_initialisation=False)
-        real_edges = cmplx.get_real_edges(cmplx.limited_complex)
-
-        ln_coll = LineCollection(real_edges, colors='b', alpha=0.4)
+        cmplx = AlphaGeometricComplex(points)
+        real_edges = cmplx.get_real_edges(cmplx.limited_simplices)
+        ln_coll = LineCollection(real_edges, colors='b', alpha=0.2)
         return ln_coll
 
     def plot_all_diagrams(self, i, size=(12, 12)):
@@ -113,6 +139,9 @@ class PairTopologyPlotter:
             left = fig.add_subplot(334, sharey=central)
             right = fig.add_subplot(336, sharey=central)
 
+            right.invert_xaxis()
+            bottom.invert_yaxis()
+
             for ax in {central, top, bottom, left, right}:
                 ax.grid(which='both', alpha=0.5)
 
@@ -124,7 +153,7 @@ class PairTopologyPlotter:
                 # ax.set_yticks([])
 
             central.tick_params(labeltop=True, labelright=True)
-            cleaned_points = self.standardise(self.__mask_points__(i))
+            cleaned_points = self.standardise(self.__mask_points__(i-1))
             central.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                             color='black', alpha=0.7, s=5)
             central.set_aspect(1)
@@ -133,20 +162,20 @@ class PairTopologyPlotter:
 
             # axs[0, 0].set_axis_off()
             self.plot_diagram(i, matplotlib_axis=top,
-                              filtration="x_filtration_H0", axis=0)
+                              filtration="X", axis=0)
             # axs[0, 2].set_axis_off()
             self.plot_diagram(i, matplotlib_axis=left,
-                              filtration="y_filtration_H0", axis=1)
+                              filtration="Y", axis=1)
             self.plot_diagram(i, matplotlib_axis=right,
-                              filtration="y_inv_filtration_H0", axis=1)
+                              filtration="Y_inverted", axis=1)
             # axs[2,0].set_axis_off()
             self.plot_diagram(i, matplotlib_axis=bottom,
-                              filtration="x_inv_filtration_H0", axis=0)
+                              filtration="X_inverted", axis=0)
 
             # axs[2,2].set_axis_off()
 
             fig.tight_layout(pad=0, w_pad=0, h_pad=0)
-            fig.subplots_adjust(wspace=0, hspace=0)
+            # fig.subplots_adjust(wspace=0, hspace=0)
 
     def plot_all_diagrams2(self, i, size=(12, 12)):
         if i > len(self.outliers):
@@ -162,39 +191,38 @@ class PairTopologyPlotter:
             y_f = fig.add_subplot(332, sharey=pts)
             x_f = fig.add_subplot(334, sharex=pts)
 
-            xinv_f = fig.add_subplot(336, sharex=pts)
-            yinv_f = fig.add_subplot(338, sharey=pts)
             invpts = fig.add_subplot(339)
+            xinv_f = fig.add_subplot(336, sharex=invpts)
+            yinv_f = fig.add_subplot(338, sharey=invpts)
+            invpts.set_aspect('equal')
 
             pts.tick_params(labeltop=True, labelleft=True)
 
             for ax in {pts, x_f, y_f, xinv_f, yinv_f, invpts}:
                 ax.grid(which='both', alpha=0.5)
 
-            cleaned_points = self.standardise(self.__mask_points__(i))
+            cleaned_points = self.standardise(self.__mask_points__(i+1))
             pts.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                         color='black', alpha=0.7, s=5)
-            lines = self.delaunay_lines(cleaned_points)
-            pts.add_collection(lines)
+            # lines =self.delaunay_lines(cleaned_points)
+            pts.add_collection(self.delaunay_lines(cleaned_points))
             invpts.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                         color='black', alpha=0.7, s=5)
-            invpts.add_collection(lines)
-            print(pts.get_xlim())
-            print(pts.get_ylim())
-            invpts.set_xlim(pts.get_xlim())
-            invpts.set_ylim(pts.get_ylim())
+            invpts.add_collection(self.delaunay_lines(cleaned_points))
             invpts.invert_xaxis()
             invpts.invert_yaxis()
+            invpts.set_xlim(pts.get_xlim())
+            invpts.set_ylim(pts.get_ylim())
 
             self.plot_diagram(i, matplotlib_axis=x_f,
-                              filtration="x_filtration_H0", axis=0)
+                              filtration="X", axis=0)
             self.plot_diagram(i, matplotlib_axis=y_f,
-                              filtration="y_filtration_H0", axis=1)
+                              filtration="Y", axis=1)
 
             self.plot_diagram(i, matplotlib_axis=yinv_f,
-                              filtration="y_inv_filtration_H0", axis=1)
+                              filtration="Y_inverted", axis=1)
             self.plot_diagram(i, matplotlib_axis=xinv_f,
-                              filtration="x_inv_filtration_H0", axis=0)
+                              filtration="X_inverted", axis=0)
 
             fig.tight_layout(pad=0, w_pad=0, h_pad=0)
             fig.subplots_adjust(wspace=0, hspace=0)
