@@ -61,8 +61,9 @@ class FilteredComplex:
                     if i.unpaired():
                         death = float('inf')
                         homology["undying"].append([birth, death])
-                        logging.debug("Undying simplex: %s at %f",
-                                      birth_simplex, birth_simplex.data)
+                        logging.debug("Undying simplex: %s at %s",
+                                      str(birth_simplex),
+                                      str(birth_simplex.data))
                         undying += 1
                         if undying > 1:
                             logging.debug("The complex seems to be "
@@ -75,11 +76,12 @@ class FilteredComplex:
                         elif death < birth:
                             logging.warning("You can not die before You were "
                                             "born!")
-                            logging.warning(birth_simplex, birth,
-                                            killing_simplex, death)
+                            logging.warning("%s, %s, %s, %s",
+                                            str(birth_simplex), str(birth),
+                                            str(killing_simplex), str(death))
                 elif birth_simplex.dimension() > 1:
                     logging.warning("There should be no simplices of dim >1?! "
-                                    "but there is: %s", birth_simplex)
+                                    "but there is: %s", str(birth_simplex))
         return homology
 
     def create_persistence_diagrams(self):
@@ -133,8 +135,9 @@ class SweepFilteredComplex(FilteredComplex):
                         elif death < birth:
                             logging.warning("You can not die before You were "
                                             "born!")
-                            logging.warning(birth_simplex, birth,
-                                            killing_simplex, death)
+                            logging.warning("%s %s %s %s",
+                                            str(birth_simplex), str(birth),
+                                            str(killing_simplex), str(death))
                 elif birth_simplex.dimension() > 1:
                     logging.warning("There should be no simplices of dim >1?! "
                                     "but there is: %s", birth_simplex)
@@ -161,8 +164,8 @@ class AlphaFilteredComplex(FilteredComplex):
                     if i.unpaired():
                         death = float('inf')
                         homology["undying"].append([birth, death])
-                        logging.debug("Undying simplex: %s at %f",
-                                      birth_simplex, birth)
+                        logging.debug("Undying simplex: %s at %s",
+                                      str(birth_simplex), str(birth))
                         undying += 1
                         if undying > 1:
                             logging.warning("The complex seems to be "
@@ -179,5 +182,5 @@ class AlphaFilteredComplex(FilteredComplex):
                                             killing_simplex, death)
                 elif birth_simplex.dimension() > 1:
                     logging.warning("There should be no simplices of dim >1?! "
-                                    "but there is: %s", birth_simplex)
+                                    "but there is: %s", str(birth_simplex))
         return homology
