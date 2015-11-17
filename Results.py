@@ -242,6 +242,11 @@ class Analysis:
 
         self.regenerate_results()
 
+        l = [(k, [v.causality_inferred, v.weight, v.confidence,
+                  v.causality_true]) for k, v in self.pairs_dict.items()]
+
+        self.readable_summary = sorted(l, key=lambda x: x[1][2], reverse=True)
+
     def generate_causality_confidence(self):
         result = np.array([
             [pair.causality_inferred, pair.weight, pair.confidence,
@@ -279,6 +284,138 @@ class Analysis:
         percentage = np.linspace(0, 100, decisions.shape[0])
         # plt.plot(percentage[:m],to_plot, label=label, **kwargs)
         plt.plot(to_plot, label=label, **kwargs)
-        plt.ylim(0.4, 1.03)
+        plt.ylim(0., 1.03)
         print(label, "Decisions taken:", m)
         print(label, "Final accuracy rate:", to_plot[-1])
+
+
+class ScoreAverageResults:
+
+    def __init__(self, results):
+        self.confidence_aggregates = {}
+        for name in results[1].pairs_dict.keys():
+            confidence_agg = []
+            for sample in results:
+                p = sample.pairs_dict[name]
+                confidence_agg.append(p.causality_inferred * p.confidence)
+            self.confidence_aggregates[name] = (
+                [self.decide_causality(sum(confidence_agg), 0),
+                 # decided causality
+                 p.weight,  # pair weight
+                 np.abs(sum(confidence_agg))/len(results),
+                 # confidence of decision
+                 p.causality_true],  # true causality
+                confidence_agg)
+
+        l = [(key, value[0]) for key,value in
+             self.confidence_aggregates.items()]
+        self.readable_summary = sorted(l, key=lambda x: x[1][2], reverse=True)
+        self.pairs_causality_confidence = np.array([z[1] for z in
+                                                    self.readable_summary])
+
+    @staticmethod
+    def decide_causality(score, threshold=0):
+
+        if np.abs(score) <= threshold:
+            causality = 0
+        else:
+            causality = abs(score)/score
+        return causality
+
+    def print_results(self, condition=True):
+        print("   name \t","correct?\t", 'confidence\t', 'weight\t')
+        for i, x in enumerate(self.readable_summary):
+            if condition:
+                print("{:02d}".format(i), x[0], '\t',
+                      int(x[1][0] == x[1][3]), '\t\t',
+                      "{:0.4f}".format(x[1][2]), ' \t', x[1][1])
+
+
+class FunctionAverageResults():
+    def __init__(self, results):
+        self.results=results
+        self.pairs_dict = {}
+        for name in self.results[0].pairs_dict.keys():
+            pair_results_list = [sample.pairs_dict[name] for sample in results]
+            self.pairs_dict[name] = AveragedPair(name, pair_results_list)
+        self.redecide_causality()
+
+    def redecide_causality(self, weight_function='uniform'):
+        for name in self.pairs_dict.keys():
+            self.pairs_dict[name].decide_causality(weight_function)
+
+        l = [(k, [v.causality_inferred, v.weight, v.confidence,
+                  v.causality_true]) for k, v in self.pairs_dict.items()]
+
+        self.readable_summary = sorted(l, key=lambda x: x[1][2], reverse=True)
+
+        self.pairs_causality_confidence = np.array([z[1] for z in
+                                                    self.readable_summary])
+
+
+class AveragedPair:
+    def __init__(self, name, list_of_results):
+        self.results_list = list_of_results
+        self.name = name
+        self.weight = list_of_results[0].weight
+        self.causality_true = list_of_results[0].causality_true
+
+        self.average_distances()
+        self.decide_causality()
+
+    def decide_causality(self, weight_function='uniform'):
+
+        l = self.X_distances.shape[0]
+        domain = np.arange(0, l, 1)
+
+        if type(weight_function) == type(lambda x: x):
+            pass
+        elif weight_function == 'uniform':
+            def weight_function(x):
+                return 1.0 + 0*x
+        elif weight_function == 'triangle':
+            def weight_function(x):
+                return -np.abs(x - l/2) + l/2
+        elif weight_function == 'gaussian':
+            def weight_function(x):
+                return np.exp(-np.power(x - l/2, 2) /
+                              (2 * np.power(l/6, 2)))
+        else:
+            def weight_function(x):
+                return 1.0 + 0*x
+            print("unknown_function!, using uniform!")
+
+        w = weight_function(domain)
+        weighting = w/sum(w)
+
+        x_integral = np.dot(weighting,
+                            np.maximum(self.X_distances, self.X_inv_distances))
+        y_integral = np.dot(weighting,
+                            np.maximum(self.Y_distances, self.Y_inv_distances))
+        confidence = np.abs(x_integral - y_integral)
+
+        if confidence == 0:
+            causality = 0
+        else:
+            causality = int((y_integral - x_integral)/np.abs(x_integral -
+                                                             y_integral))
+        self.causality_inferred = causality
+        self.confidence = confidence
+
+    def average_distances(self):
+        X_distances_list = []
+        Y_distances_list = []
+        X_inv_distances_list = []
+        Y_inv_distances_list = []
+        for sample in self.results_list:
+            X_distances_list.append(sample.X_distances)
+            Y_distances_list.append(sample.Y_distances)
+            X_inv_distances_list.append(sample.X_inv_distances)
+            Y_inv_distances_list.append(sample.Y_inv_distances)
+
+        self.X_distances = np.average(np.array(X_distances_list), axis=0)
+        self.Y_distances = np.average(np.array(Y_distances_list), axis=0)
+        self.X_inv_distances = np.average(np.array(X_inv_distances_list),
+                                          axis=0)
+        self.Y_inv_distances = np.average(np.array(Y_inv_distances_list),
+                                          axis=0)
