@@ -77,19 +77,18 @@ class PairTopologyPlotter:
         points = np.array(self.diagrams[i][filtration][0])
 
         if 'inverted' in filtration:
-            if points.any():  # if the array is not empty...
+            if points:  # if the array is not empty...
                 points *= -1
-                # points += [maximal, maximal]
                 ax.scatter(points[:, 1], points[:, 0],
                            marker='+', s=40, facecolors='none', edgecolors='r')
                 for pt in points:
                     ax.plot([pt[1], pt[0]], [pt[0], pt[0]],
                             color='black', alpha=0.3)
         else:
-            # points += [minimal, minimal]
-            ax.scatter(points[:, 0], points[:, 1],
+            if points:
+                ax.scatter(points[:, 0], points[:, 1],
                        marker='+', s=40, facecolors='none', edgecolors='r')
-            for pt in points:
+                for pt in points:
                     ax.plot([pt[0], pt[0]], [pt[0], pt[1]],
                             color='black', alpha=0.3)
 
