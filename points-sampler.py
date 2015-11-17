@@ -4,20 +4,26 @@ import os
 import logging
 
 
-def quantise(points):
+def quantise(points, soft_bins=False):
     """
     if one of the axes in points is heavily digitised, digitise all the other
     to the same number of bins.
     :param points: np.array
     :return: np.array: digitised points to the same number of bins
     """
+
     number_of_bins = [len(set(points[:, i]))
                       for i in range(points.shape[1])]
     logging.info("Numbers of different values along axes (bins): %s",
                  str(number_of_bins))
     m = min(number_of_bins)
-    for i in range(points.shape[1]):
-        points[:, i] = fit_to_bins(points[:, i], m)
+    if soft_bins is True:
+        if points.shape[0]/m < 5:
+            return points
+        else:  # it then looks quantised
+            logging.info("Pair %s has been quantised.", filename)
+            for i in range(points.shape[1]):
+                points[:, i] = fit_to_bins(points[:, i], m)
 
     return points
 
@@ -80,9 +86,8 @@ def workflow(filename, size=1000):
         
         points = masked_points.compressed().reshape(new_shape)
 
-    # p1 = standardise(points)
-    # points = quantise(p1)
-    std_points = standardise(points)
+    std_points = quantise(points, soft_bins=True)
+    # std_points = points
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
     logging.info("Sampling Done!")
 
