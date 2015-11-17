@@ -96,21 +96,12 @@ class PairTopologyPlotter:
         ax.legend(loc=4, labels=[filtration], fancybox=True,
                   framealpha=0.5)
 
-    def plot_delaunay(self, i, size=(12, 12)):
-        fig = plt.figure()
-        fig.set_size_inches(size)
+    def plot_delaunay(self, i):
         cleaned_points = self.standardise(self.__mask_points__(i-1))
         ax = plt.gca()
-        ax.add_collection(self.delaunay_lines(cleaned_points))
-
-        outliers = np.array([self.points[out] for out in self.outliers[:i]])
-        # print(outliers)
-        if outliers.any():
-            plt.scatter(outliers[:, 0], outliers[:, 1],
-                        color='red', alpha=1, s=15)
-
         plt.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                     color='black', alpha=0.7, s=5)
+        ax.add_collection(self.delaunay_lines(cleaned_points))
 
         ax = plt.axes()
         ax.set_xlim(min(self.points[:,0])-0.5, max(self.points[:,0])+0.5)
@@ -124,13 +115,12 @@ class PairTopologyPlotter:
         ln_coll = LineCollection(real_edges, colors='b', alpha=0.2)
         return ln_coll
 
-    def plot_all_diagrams(self, i, size=(12, 12)):
+    def plot_all_diagrams(self, i):
         if i > len(self.outliers):
             print("argument must be less than", len(self.outliers),
                   "for the pair!")
         else:
-            fig = plt.figure()
-            fig.set_size_inches(size)
+            fig = plt.gcf()
             fig.suptitle(self.name + " " + self.suffix + " outlier: " + str(i))
 
             central = fig.add_subplot(335)
