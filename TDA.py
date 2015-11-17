@@ -37,8 +37,12 @@ class CauseEffectPair:
         # 3: effect-first-coord,
         # 4: effect-last-coord,
         # 5: weight
-        self.x_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
-        self.y_range = range(int(self.metadata[3])-1, int(self.metadata[4]))
+        if self.metadata[1] ==1:
+            self.x_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
+            self.y_range = range(int(self.metadata[3])-1, int(self.metadata[4]))
+        else:
+            self.x_range = range(int(self.metadata[3])-1, int(self.metadata[4]))
+            self.y_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
 
         self.prepare_points()
 
