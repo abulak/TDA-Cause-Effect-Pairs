@@ -8,9 +8,9 @@ import json
 import matplotlib
 matplotlib.use('Agg')
 
+import GeometricComplex as GC
 import matplotlib.pyplot as plt
 
-from GeometricComplex import AlphaGeometricComplex
 from matplotlib.collections import LineCollection
 
 
@@ -102,14 +102,9 @@ class PairTopologyPlotter:
                     color='black', alpha=0.7, s=5)
         ax.add_collection(self.delaunay_lines(cleaned_points))
 
-        ax = plt.axes()
-        ax.set_xlim(min(self.points[:,0])-0.5, max(self.points[:,0])+0.5)
-        ax.set_ylim(min(self.points[:,1])-0.5, max(self.points[:,1])+0.5)
-
-    def delaunay_lines(self, points):
-        # plotting the whole Delaunay triangulation:
-
-        cmplx = AlphaGeometricComplex(points)
+    @staticmethod
+    def delaunay_lines(points):
+        cmplx = GC.AlphaGeometricComplex(points)
         real_edges = cmplx.get_real_edges(cmplx.limited_simplices)
         ln_coll = LineCollection(real_edges, colors='b', alpha=0.2)
         return ln_coll
