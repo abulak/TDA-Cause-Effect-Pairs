@@ -65,7 +65,8 @@ class PairTopologyPlotter:
         plt.plot(self.scores[1], label='y->x')
         plt.legend(loc='best', fancybox=True, framealpha=0.5)
 
-    def plot_diagram(self, i, matplotlib_axis, filtration, axis):
+    def plot_diagram(self, i, matplotlib_axis, filtration, axis,
+                     inverted=False):
 
         ax = matplotlib_axis
 
@@ -76,8 +77,8 @@ class PairTopologyPlotter:
                     color='black', alpha=0.5)
         points = np.array(self.diagrams[i][filtration][0])
 
-        if 'inverted' in filtration:
-            if points:  # if the array is not empty...
+        if inverted:
+            if points.size:  # if the array is not empty...
                 points *= -1
                 ax.scatter(points[:, 1], points[:, 0],
                            marker='+', s=40, facecolors='none', edgecolors='r')
@@ -85,7 +86,7 @@ class PairTopologyPlotter:
                     ax.plot([pt[1], pt[0]], [pt[0], pt[0]],
                             color='black', alpha=0.3)
         else:
-            if points:
+            if points.size:
                 ax.scatter(points[:, 0], points[:, 1],
                        marker='+', s=40, facecolors='none', edgecolors='r')
                 for pt in points:
@@ -151,10 +152,10 @@ class PairTopologyPlotter:
             self.plot_diagram(i, matplotlib_axis=left,
                               filtration="Y", axis=1)
             self.plot_diagram(i, matplotlib_axis=right,
-                              filtration="Y_inverted", axis=1)
+                              filtration="Y_inverted", axis=1, inverted=True)
             # axs[2,0].set_axis_off()
             self.plot_diagram(i, matplotlib_axis=bottom,
-                              filtration="X_inverted", axis=0)
+                              filtration="X_inverted", axis=0, inverted=True)
 
             # axs[2,2].set_axis_off()
 
@@ -188,15 +189,14 @@ class PairTopologyPlotter:
             cleaned_points = self.standardise(self.__mask_points__(i+1))
             pts.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                         color='black', alpha=0.7, s=5)
-            # lines =self.delaunay_lines(cleaned_points)
-            pts.add_collection(self.delaunay_lines(cleaned_points))
+            pts.add_collection(self.delaunay_lines(points=cleaned_points))
             invpts.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                         color='black', alpha=0.7, s=5)
-            invpts.add_collection(self.delaunay_lines(cleaned_points))
-            invpts.invert_xaxis()
-            invpts.invert_yaxis()
+            invpts.add_collection(self.delaunay_lines(points=cleaned_points))
             invpts.set_xlim(pts.get_xlim())
             invpts.set_ylim(pts.get_ylim())
+            invpts.invert_xaxis()
+            invpts.invert_yaxis()
 
             self.plot_diagram(i, matplotlib_axis=x_f,
                               filtration="X", axis=0)
@@ -204,9 +204,9 @@ class PairTopologyPlotter:
                               filtration="Y", axis=1)
 
             self.plot_diagram(i, matplotlib_axis=yinv_f,
-                              filtration="Y_inverted", axis=1)
+                              filtration="Y_inverted", axis=1, inverted=True)
             self.plot_diagram(i, matplotlib_axis=xinv_f,
-                              filtration="X_inverted", axis=0)
+                              filtration="X_inverted", axis=0, inverted=True)
 
             fig.tight_layout(pad=0, w_pad=0, h_pad=0)
             fig.subplots_adjust(wspace=0, hspace=0)
