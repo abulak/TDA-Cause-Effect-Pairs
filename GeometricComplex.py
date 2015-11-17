@@ -101,9 +101,9 @@ class GeometricComplex:
         if simplex.dimension() == 0:
             simplex_real_coordinates = self.points[next(vertices)]
             if not inverse:
-                return simplex_real_coordinates - self.minima
+                return simplex_real_coordinates
             if inverse:
-                return self.maxima - simplex_real_coordinates
+                return -1*simplex_real_coordinates
         elif simplex.dimension() == 1:
             simplex_real_coordinates = [self.points[next(vertices)],
                                         self.points[next(vertices)]]
@@ -114,10 +114,10 @@ class GeometricComplex:
 
         if not inverse:
             return np.maximum(simplex_real_coordinates[0],
-                              simplex_real_coordinates[1]) - self.minima
+                              simplex_real_coordinates[1])
         if inverse:
-            return self.maxima - np.minimum(simplex_real_coordinates[0],
-                                            simplex_real_coordinates[1])
+            return -1*np.minimum(simplex_real_coordinates[0],
+                                 simplex_real_coordinates[1])
 
     def standardise_data(self):
         """Standardise self.points IN-PLACE i.e.
