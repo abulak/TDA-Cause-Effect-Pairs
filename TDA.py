@@ -50,7 +50,7 @@ class CauseEffectPair:
 
         std_points_file = os.path.join(self.current_dir, "std_points")
         self.std_points = np.loadtxt(std_points_file)
-        self.dimension = int(self.std_points.shape[1])
+        self.dimension = self.std_points.shape[1]
 
         outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
 
