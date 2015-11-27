@@ -281,12 +281,16 @@ class Analysis:
         m = len([0 for x in pairs_causality_confidence if x[2] >=
                  threshold])
         to_plot = weighted_efficiency[:m]
-        percentage = np.linspace(0, 100, decisions.shape[0])
+        # percentage = np.linspace(0, 100, decisions.shape[0])
         # plt.plot(percentage[:m],to_plot, label=label, **kwargs)
-        plt.plot(to_plot, label=label, **kwargs)
+        plt.plot(to_plot,
+                 label="({:02d}, {:04f}) ".format(m, to_plot[-1])+label,
+                 **kwargs)
         plt.ylim(0., 1.03)
-        print(label, "Decisions taken:", m)
-        print(label, "Final accuracy rate:", to_plot[-1])
+        # print(label, "Decisions taken:", m)
+        # print(label, "Final accuracy rate:", to_plot[-1])
+        # print(label, "Total weight:", sum(weights[:m-1]))
+        return sum(weights[:m-1]), to_plot[-1]
 
 
 class ScoreAverageResults:
