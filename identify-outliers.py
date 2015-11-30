@@ -62,7 +62,7 @@ class OutlierRemoval:
 
         return outlier
 
-    def find_outliers_knn2(self, k_nearest):
+    def find_outliers_knn(self, k_nearest):
 
         logging.info("Finding 'knn' %d outliers in %s", self.n_of_outliers,
                      self.name)
@@ -86,7 +86,7 @@ class OutlierRemoval:
 
         return true_outliers
 
-    def find_outliers_knn(self, k_nearest):
+    def find_outliers_knn_old(self, k_nearest):
 
         logging.info("Finding 'knn' %d outliers in %s", self.n_of_outliers,
                      self.name)
@@ -136,12 +136,12 @@ class OutlierRemoval:
         if self.model == 'all':  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
 
-        if self.model == 'knn-old':
+        if self.model == 'knn_old':
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
-            self.outliers = self.find_outliers_knn(nearest_neighbours)
+            self.outliers = self.find_outliers_knn_old(nearest_neighbours)
         if self.model == 'knn':
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
-            self.outliers = self.find_outliers_knn2(nearest_neighbours)
+            self.outliers = self.find_outliers_knn(nearest_neighbours)
 
         logging.info('Done with outliers!')
 
