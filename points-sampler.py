@@ -93,18 +93,9 @@ def workflow(filename, size=1000):
 
 if __name__ == '__main__':
 
-    blacklist = ['pair0023.txt',
-                 'pair0033.txt',
-                 'pair0037.txt',
-                 'pair0047.txt',
-                 'pair0070.txt']
-
     if len(sys.argv) == 3:
         filename = sys.argv[1]
         size = int(sys.argv[2])
-        if filename not in blacklist:
-            workflow(filename, size)
-        else:
-            print(filename, "is blacklisted! (it doesn't fit the model?)")
+        workflow(filename, size)
     else:
         print("Usage: points-sampler.py $FILENAME $SIZE")
