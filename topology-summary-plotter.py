@@ -193,7 +193,7 @@ class PairTopologyPlotter:
             for ax in {pts, x_f, y_f, xinv_f, yinv_f, invpts}:
                 ax.grid(which='both', alpha=0.5)
 
-            cleaned_points = self.standardise(self.__mask_points__(i+1))
+            cleaned_points = self.standardise(self.__mask_points__(i-1))
             pts.scatter(cleaned_points[:, 0], cleaned_points[:, 1],
                         color='black', alpha=0.7, s=5)
             pts.add_collection(self.delaunay_lines(points=cleaned_points))
