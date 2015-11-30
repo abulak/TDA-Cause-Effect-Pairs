@@ -123,7 +123,7 @@ class PairTopologyPlotter:
                   "for the pair!")
         else:
             fig = plt.gcf()
-            fig.suptitle(self.name + " " + self.suffix + " outlier: " + str(i))
+            fig.subtitle(self.name + " " + self.suffix + " outlier: " + str(i))
 
             central = fig.add_subplot(335)
             top = fig.add_subplot(332, sharex=central)
