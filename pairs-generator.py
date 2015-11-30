@@ -8,15 +8,15 @@ SIZE = 2000
 
 pattern = re.compile('pair00..\.txt')
 all_pair_names = sorted([x for x in os.listdir('pairs') if pattern.match(x)])
-BLACKLIST = ['pair0026.txt',
-             'pair0027.txt',
-             'pair0028.txt',
-             'pair0029.txt',
-             'pair0032.txt',
-             'pair0033.txt',
-             'pair0047.txt',
-             'pair0070.txt',
-             'pair0071.txt']
+BLACKLIST = [  # 'pair0026.txt',  # sampling of 'uneven' density
+             # 'pair0027.txt',  # sampling of 'uneven' density
+             # 'pair0028.txt',  # sampling of 'uneven' density
+             # 'pair0029.txt',  # sampling of 'uneven' density
+             # 'pair0032.txt',  # sampling of 'uneven' density
+             # 'pair0033.txt',  # sampling of 'uneven' density
+             'pair0047.txt',  # Y is binary
+             'pair0070.txt',  # Y is binary
+             'pair0071.txt']  # Y is binary
 
 SLOW_PAIRS = ['pair0052.txt', 'pair0053.txt']
 
@@ -43,8 +43,8 @@ def find_large_pairs(pairs):
 # large_pairs = find_large_pairs(fast_pairs)
 
 
-for i in range(1, 21):
-    prefix = '{0:03d}'.format(i)
-    print("Starting ", prefix, end=' ')
-    subprocess.call(["make", "-j3", "knn", "PREFIX="+prefix, "SIZE="+str(SIZE)])
-    print("done", prefix)
+# for i in range(1, 21):
+#     prefix = '{0:03d}'.format(i)
+#     print("Starting ", prefix, end=' ')
+#     subprocess.call(["make", "-j3", "knn", "PREFIX="+prefix, "SIZE="+str(SIZE)])
+#     print("done", prefix)
