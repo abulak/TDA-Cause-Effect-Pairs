@@ -17,7 +17,8 @@ def standardise(points):
         mean = np.mean(p)
         std = np.std(p)
         p -= mean
-        p /= std
+        if std:
+            p /= std
     return points
 
 
@@ -45,7 +46,7 @@ class OutlierRemoval:
         points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
         self.points = standardise(points)
         self.model = model
-        self.dimension = self.points[0].shape[0]
+        self.dimension = self.points.shape[1]
 
         self.n_of_outliers = int(15 * self.points.shape[0] / 100.0)
 
@@ -69,7 +70,8 @@ class OutlierRemoval:
         shape = self.points.shape
         outliers = []
         for i in range(self.n_of_outliers):
-            pts = masked_points.compressed().reshape((shape[0] - i, 2))
+            pts = masked_points.compressed().reshape((shape[0] - i,
+                                                      self.dimension))
             pts = standardise(pts)
             out_index = self.find_single_outlier_knn(pts, k_nearest)
             outliers.append(out_index)
