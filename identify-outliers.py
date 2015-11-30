@@ -134,10 +134,10 @@ class OutlierRemoval:
         if self.model == 'all':  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
 
-        if self.model == 'knn':
+        if self.model == 'knn-old':
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
             self.outliers = self.find_outliers_knn(nearest_neighbours)
-        if self.model == 'knn2':
+        if self.model == 'knn':
             nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
             self.outliers = self.find_outliers_knn2(nearest_neighbours)
 
