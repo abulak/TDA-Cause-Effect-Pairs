@@ -33,7 +33,14 @@ class PairTopologyPlotter:
             self.diagrams = json.load(file)
 
         outliers_path = os.path.join(os.getcwd(), 'outliers_' + self.suffix)
-        self.outliers = np.loadtxt(outliers_path, dtype=np.int)
+
+        outliers = np.loadtxt(outliers_path).astype(np.int)
+        o, index = np.unique(outliers, return_index=True)
+        true_outliers = len(outliers)*[-1]
+        for i in index:
+            true_outliers[i] = outliers[i]
+        self.outliers = np.array([x for x in true_outliers if x != -1],
+                                 dtype=int)
 
         extrema_path = os.path.join(os.getcwd(), 'extrema_' + self.suffix)
         with open(extrema_path, 'r') as file:

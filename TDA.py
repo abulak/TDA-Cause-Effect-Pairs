@@ -56,7 +56,11 @@ class CauseEffectPair:
 
         outliers = np.loadtxt(outliers_file).astype(np.int)
         o, index = np.unique(outliers, return_index=True)
-        self.outliers = outliers[index]
+        true_outliers = len(outliers)*[-1]
+        for i in index:
+            true_outliers[i] = outliers[i]
+        self.outliers = np.array([x for x in true_outliers if x != -1],
+                                 dtype=int)
 
     def remove_outliers(self, i):
         """
