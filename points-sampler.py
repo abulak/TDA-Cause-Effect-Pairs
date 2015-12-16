@@ -4,7 +4,7 @@ import os
 import logging
 
 
-def quantise(points, soft_bins=False):
+def quantise(points, bins=False):
     """
     if one of the axes in points is heavily digitised, digitise all the other
     to the same number of bins.
@@ -43,7 +43,7 @@ def fit_to_bins(column, m):
     return digitised
 
 
-def workflow(filename, size=1000):
+def workflow(filename, size=1000, bins=False):
 
     logging.basicConfig(filename=filename[:-4]+".log",
                         filemode='w',
@@ -86,16 +86,17 @@ def workflow(filename, size=1000):
         
         points = masked_points.compressed().reshape(new_shape)
 
-    std_points = quantise(points, soft_bins=True)
+    std_points = quantise(points, bins=bins)
     # std_points = points
     np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
     logging.info("Sampling Done!")
 
 if __name__ == '__main__':
 
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 4:
         filename = sys.argv[1]
         size = int(sys.argv[2])
+        bins = bool(sys.argv[3])
         workflow(filename, size)
     else:
-        print("Usage: points-sampler.py $FILENAME $SIZE")
+        print("Usage: points-sampler.py $FILENAME $SIZE $BINS")

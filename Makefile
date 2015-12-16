@@ -6,6 +6,10 @@ ifndef SIZE
 	SIZE = 1000
 endif
 
+ifndef BINS
+	BINS = 0
+endif
+
 PYTHON = $(shell which python3)
 
 # FILE := all_pairs
@@ -30,12 +34,12 @@ $(PAIRS): $$(addsuffix .knn, $$@) $$(addsuffix .all, $$@)
 $(addsuffix .knn, $(PAIRS)): prefix
 	mkdir -p $(PREFIX)/$(basename $@)
 	cp ./Makefile-pair $(PREFIX)/$(basename $@)/Makefile
-	$(MAKE) -C $(PREFIX)/$(basename $@) knn PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE)
+	$(MAKE) -C $(PREFIX)/$(basename $@) knn PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE) BINS=$(BINS)
 
 $(addsuffix .all, $(PAIRS)): prefix
 	mkdir -p $(PREFIX)/$(basename $@)
 	cd $(PREFIX)/$(basename $@) &&\
-	$(MAKE) -f ../../Makefile-pair all PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE)
+	$(MAKE) -f ../../Makefile-pair all PAIR=$(addsuffix .txt, $(basename $@)) SIZE=$(SIZE) BINS=$(BINS)
 
 $(addsuffix .dirs, $(PAIRS)): prefix
 	mkdir -p $(PREFIX)/$(basename $@)
