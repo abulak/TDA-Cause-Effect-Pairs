@@ -42,6 +42,7 @@ $(addsuffix .dirs, $(PAIRS)): prefix
 	
 prefix:
 	mkdir -p $(PREFIX)
+	cp ./pairs/pairmeta.txt ./$(PREFIX)/
 
 .PHONY: clean $(addsuffix .clean, $(PAIRS))
 

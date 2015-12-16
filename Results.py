@@ -16,24 +16,18 @@ sys.path.append(os.path.join(back_path,
 dionysus = __import__('dionysus')
 
 
-class PairsResults:
-    try:
-        all_pairs_metadata = np.loadtxt(
-            os.path.join(os.getcwd(), 'pairs', 'pairmeta.txt'))
-    except FileNotFoundError:
-        logging.warning("No metadata found! All is set to 0")
-        all_pairs_metadata = np.zeros((88, 6))
+class Pair:
 
     empty_diagram = dionysus.PersistenceDiagram(0)
     empty_diagram.append((0, 0))
 
-    def __init__(self, name, path_to_diagrams):
+    def __init__(self, name, path_to_diagrams, metadata):
         if name[-4:] == '.txt':
             name = name[:-4]
         self.name = name
         self.number = int(name[-4:])
 
-        self.metadata = self.all_pairs_metadata[self.number-1]
+        self.metadata = metadata
 
         if self.metadata[1] == 1:     # i.e. X --> Y
             self.causality_true = 1
@@ -217,6 +211,13 @@ class Analysis:
 
     def __init__(self, prefix='test', outlier_model='knn'):
 
+        try:
+            self.metadata = np.loadtxt(
+                os.path.join(os.getcwd(), prefix, 'pairmeta.txt'))
+        except FileNotFoundError:
+            logging.warning("No metadata found! All is set to 0")
+            self.metadata = np.zeros((100, 6))
+
         self.prefix = prefix
 
         pattern = re.compile('pair[0-9]{4,}$')
@@ -236,7 +237,9 @@ class Analysis:
                 logging.warning("Results for model: %s not computed in %s",
                                 str(outlier_model), str(outlier_model))
                 path_to_diagrams = ''
-            p = PairsResults(directory, path_to_diagrams)
+            pair_number = int(directory[-4:])
+            pair_metadata = self.metadata[pair_number - 1]
+            p = Pair(directory, path_to_diagrams, pair_metadata)
             self.pairs.append(p)
             self.pairs_dict[p.name] = p
 
