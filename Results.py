@@ -196,7 +196,7 @@ class OutlierPersistence:
         projection_list = diagrams_dict[direction]
         persistence_diagrams_list = []
         for diagram in projection_list:
-            p_list=[]
+            p_list = []
             if not diagram:
                 diagram = [(0, 0)]
             for pair in diagram:
@@ -314,7 +314,7 @@ class ScoreAverageResults:
                  p.causality_true],  # true causality
                 confidence_agg)
 
-        l = [(key, value[0]) for key,value in
+        l = [(key, value[0]) for key, value in
              self.confidence_aggregates.items()]
         self.readable_summary = sorted(l, key=lambda x: x[1][2], reverse=True)
         self.pairs_causality_confidence = np.array([z[1] for z in
@@ -330,7 +330,7 @@ class ScoreAverageResults:
         return causality
 
     def print_results(self, condition=True):
-        print("   name \t","correct?\t", 'confidence\t', 'weight\t')
+        print("   name \t", "correct?\t", 'confidence\t', 'weight\t')
         for i, x in enumerate(self.readable_summary):
             if condition:
                 print("{:02d}".format(i), x[0], '\t',
@@ -338,9 +338,9 @@ class ScoreAverageResults:
                       "{:0.4f}".format(x[1][2]), ' \t', x[1][1])
 
 
-class FunctionAverageResults():
+class FunctionAverageResults:
     def __init__(self, results):
-        self.results=results
+        self.results = results
         self.pairs_dict = {}
         for name in self.results[0].pairs_dict.keys():
             pair_results_list = [sample.pairs_dict[name] for sample in results]
