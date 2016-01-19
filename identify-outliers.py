@@ -95,8 +95,6 @@ class OutlierRemoval:
 
     def find_outliers_knn_old(self, k_nearest):
 
-        logging.info("Finding 'knn' %d outliers in %s", self.n_of_outliers,
-                     self.name)
         neigh = NearestNeighbors()
         neigh.fit(self.points)
         distances, indices = neigh.kneighbors(self.points,
@@ -120,9 +118,6 @@ class OutlierRemoval:
 
     def find_outliers_all(self):
 
-        logging.info("Finding 'all' %d outliers in %s", self.n_of_outliers,
-                     self.name)
-
         distances_matrix = spsp.distance_matrix(self.points, self.points)
         outliers = []
 
@@ -140,16 +135,21 @@ class OutlierRemoval:
         if neighbours == 0 then all other points are taken into the account
         Outliers (their indexes in self.points) are stored in self.outliers"""
 
+        logging.info("Finding %s %d outliers in %s", self.model,
+                     self.n_of_outliers, self.name)
+
+        nearest_neighbours = int(2 * self.points.shape[0] / 100) + 2
+
         if self.model == 'all':  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
 
-        if self.model == 'knn_old':
-            nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
+        elif self.model == 'knn_old':
             self.outliers = self.find_outliers_knn_old(nearest_neighbours)
-        if self.model == 'knn':
-            nearest_neighbours = 2 * int(self.points.shape[0] / 100) + 2
+        elif self.model == 'knn':
             self.outliers = self.find_outliers_knn(nearest_neighbours)
-
+        else:
+            logging.warning('Unknown model of outliers! Available are: all, '
+                            'knn_old, knn')
         logging.info('Done with outliers!')
 
     def save_outliers(self):
