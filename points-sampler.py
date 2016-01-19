@@ -99,7 +99,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 4:
         filename = sys.argv[1]
         size = int(sys.argv[2])
-        bins = bool(sys.argv[3])
-        workflow(filename, size)
+        bins = bool(int(sys.argv[3]))
+        workflow(filename, size, bins)
     else:
         print("Usage: points-sampler.py $FILENAME $SIZE $BINS")
