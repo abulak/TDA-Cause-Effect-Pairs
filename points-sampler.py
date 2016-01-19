@@ -56,14 +56,17 @@ def workflow(filename, size=1000, bins=False):
     os.chdir('../../')
     raw_data = np.loadtxt(os.path.join(os.getcwd(), 'pairs', filename))
     dimension = raw_data.shape[1]
-    if size < 1 or raw_data.shape[0] < size:
-        logging.info("Data contains less points than %d. Using all available.",
-                     size)
+    if size < 1:
+        logging.info("Size parameter was <1. Using all available points.")
+        points = raw_data
+    elif raw_data.shape[0] < size:
+        logging.info("Data contains %d < %d points. Using all available.",
+                     raw_data.shape[0], size)
         points = raw_data
     else:
         # np.random.seed(0)
-        logging.info("Data contains more points than %d. Sampling.",
-                     size)
+        logging.info("Data contains %d > %d points. Sampling %d.",
+                     raw_data.shape[0], size, size)
         indices = np.random.randint(0, raw_data.shape[0], size)
         points = raw_data[indices]
 
