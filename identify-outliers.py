@@ -62,10 +62,16 @@ class OutlierRemoval:
 
         return outlier
 
-    def find_outliers_knn(self, k_nearest):
+    @staticmethod
+    def compute_offset(outliers, i):
+        offset = 0
+        for j, x in reversed(list(enumerate(outliers[:i]))):
+            if x <= outliers[i]+offset:
+                offset += 1
 
-        logging.info("Finding 'knn' %d outliers in %s", self.n_of_outliers,
-                     self.name)
+        return offset
+
+    def find_outliers_knn(self, k_nearest):
         masked_points = ma.MaskedArray(self.points)
         shape = self.points.shape
         outliers = []
@@ -79,11 +85,12 @@ class OutlierRemoval:
             masked_points[out_index] = ma.masked
             logging.debug("%d of %d", out_index, self.n_of_outliers)
 
-        true_outliers = []
-
-        for i, out in enumerate(outliers):
-            true_outliers.append(out + sum([x <= out for x in outliers[:i]]))
-
+        offsets = [self.compute_offset(outliers, i)
+                   for i in range(len(outliers))]
+        true_outliers = [out + offsets[i] for i, out in enumerate(outliers)]
+        if len(true_outliers) != len(set(true_outliers)):
+            logging.warning("There are some duplicates in the outliers! %s",
+                            str(true_outliers))
         return true_outliers
 
     def find_outliers_knn_old(self, k_nearest):
