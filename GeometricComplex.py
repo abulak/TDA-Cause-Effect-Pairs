@@ -28,7 +28,6 @@ class GeometricComplex:
         logging.info("Creating GeometricComplex on %d points in dimension %d",
                      self.points.shape[0], self.points.shape[1])
         self.dimension = self.points.shape[1]
-        self.standardise_data()
 
         self.maxima = np.array([np.max(self.points[:, i])
                                 for i in range(self.dimension)])
@@ -118,17 +117,6 @@ class GeometricComplex:
         if inverse:
             return -1*np.minimum(simplex_real_coordinates[0],
                                  simplex_real_coordinates[1])
-
-    def standardise_data(self):
-        """Standardise self.points IN-PLACE i.e.
-        mean = 0 and standard deviation = 1 in all dimensions"""
-        for i in range(self.dimension):
-            p = self.points[:, i]
-            mean = np.mean(p)
-            std = np.std(p)
-            p -= mean
-            if std:
-                p /= std
 
     @staticmethod
     def get_real_edges_from_smpl(edges, points):

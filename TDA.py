@@ -62,6 +62,18 @@ class CauseEffectPair:
         self.outliers = np.array([x for x in true_outliers if x != -1],
                                  dtype=int)
 
+    def standardise_data(self, points):
+        """Standardise self.points IN-PLACE i.e.
+        mean = 0 and standard deviation = 1 in all dimensions"""
+        for i in range(self.dimension):
+            p = points[:, i]
+            mean = np.mean(p)
+            std = np.std(p)
+            p -= mean
+            if std:
+                p /= std
+        return points
+
     def remove_outliers(self, i):
         """
         :param i: number outliers to remove from self.std_points
@@ -102,6 +114,8 @@ class CauseEffectPair:
         logging.info("Outlier: %d of %d", i+1, self.outliers.shape[0])
         # print(i, end=' ', flush=True)
         cleaned_points = self.remove_outliers(i)
+        cleaned_points = self.standardise_data(cleaned_points)
+
         if self.dimension <= 3:
             geometric_cmplx = GC.AlphaGeometricComplex(
                 cleaned_points, self.x_range, self.y_range,
