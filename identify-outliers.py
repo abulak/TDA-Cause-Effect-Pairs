@@ -80,8 +80,7 @@ class OutlierRemoval:
         shape = self.points.shape
         outliers = []
         for i in range(self.n_of_outliers):
-            pts = masked_points.compressed().reshape((shape[0] - i,
-                                                      self.dimension))
+            pts = masked_points.compressed().reshape((shape[0] - i, shape[1]))
             pts = standardise(pts)
             out_index = self.find_single_outlier_knn(pts, k_nearest)
             outliers.append(out_index)
@@ -144,7 +143,7 @@ class OutlierRemoval:
         logging.info("Finding %s %d outliers in %s", self.model,
                      self.n_of_outliers, self.name)
 
-        nearest_neighbours = int(2 * self.points.shape[0] / 100) + 2
+        nearest_neighbours = int(2 * self.points.shape[0] / 100) + 5
 
         if self.model == 'all':  # outlier based on max distance to all others
             self.outliers = self.find_outliers_all()
