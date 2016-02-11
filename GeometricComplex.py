@@ -119,22 +119,24 @@ class GeometricComplex:
                                  simplex_real_coordinates[1])
 
     @staticmethod
-    def get_real_edges_from_smpl(edges, points):
+    def get_real_coords(simplices, points):
         """
         Computes the real edges coordinates; returns list ready to
         supply to LineCollection
         i.e. list of tuples ((begin_x,begin_y), (end_x,end_y))
-        :param edges: list of edges (simplicial ones)
+        :param simplices: list of simplices
         :param points: list of points (real coordinates)
         :return: list of tuples of tuples
         """
 
-        lines = []
-        for edge in edges:
-            begin = points[edge[0]]
-            end = points[edge[1]]
-            lines.append((list(begin), list(end)))
-        return lines
+        real_coords = []
+        for simplex in simplices:
+            verts = [v for v in simplex]
+            l = []
+            for v in verts:
+                l.append(list(points[v]))
+            real_coords.append(tuple(l))
+        return real_coords
 
     def get_real_edges(self, cmplx):
 
@@ -144,8 +146,18 @@ class GeometricComplex:
                 x = simplex.vertices
                 edge = [next(x), next(x)]
                 edges.append(edge)
-        real_edges = self.get_real_edges_from_smpl(edges, self.points)
+        real_edges = self.get_real_coords(edges, self.points)
         return real_edges
+
+    def get_real_triangles(self, cmplx):
+        triangles=[]
+        for simplex in cmplx:
+            if simplex.dimension() == 2:
+                x = simplex.vertices
+                triangle = [next(x), next(x), next(x)]
+                triangles.append(triangle)
+        real_triangles = self.get_real_coords(triangles, self.points)
+        return real_triangles
 
 
 class RipsGeometricComplex(GeometricComplex):
