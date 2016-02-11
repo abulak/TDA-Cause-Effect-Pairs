@@ -6,9 +6,9 @@ import numpy as np
 
 SIZE = 2000
 
-pattern = re.compile('pair00..\.txt')
+pattern = re.compile('pair[0-9][0-9][0-9][0-9].txt')
 all_pair_names = sorted([x for x in os.listdir('pairs') if pattern.match(x)])
-BLACKLIST = [  # 'pair0026.txt',  # sampling of 'uneven' density
+BLACKLIST = [ # 'pair0026.txt',  # sampling of 'uneven' density
              # 'pair0027.txt',  # sampling of 'uneven' density
              # 'pair0028.txt',  # sampling of 'uneven' density
              # 'pair0029.txt',  # sampling of 'uneven' density
