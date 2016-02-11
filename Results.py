@@ -245,8 +245,9 @@ class Analysis:
 
         self.regenerate_results()
 
-        l = [(k, [v.causality_inferred, v.weight, v.confidence,
-                  v.causality_true]) for k, v in self.pairs_dict.items()]
+        l = [(p_name, [v.causality_inferred, v.weight, v.confidence,
+                       v.causality_true])
+             for p_name, v in self.pairs_dict.items()]
 
         self.readable_summary = sorted(l, key=lambda x: x[1][2], reverse=True)
 
