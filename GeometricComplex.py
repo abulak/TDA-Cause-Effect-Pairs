@@ -106,8 +106,12 @@ class GeometricComplex:
         elif simplex.dimension() == 1:
             simplex_real_coordinates = [self.points[next(vertices)],
                                         self.points[next(vertices)]]
+        elif simplex.dimension() == 2:
+            simplex_real_coordinates = [self.points[next(vertices)],
+                                        self.points[next(vertices)],
+                                        self.points[next(vertices)]]
         else:
-            logging.warning("There shouldn't be any simplices of dim >1?!")
+            logging.warning("There shouldn't be any simplices of dim >2?!")
             vertices_list = [v for v in vertices]
             simplex_real_coordinates = self.points[vertices_list]
 
@@ -250,16 +254,16 @@ class RipsGeometricComplex(GeometricComplex):
 class AlphaGeometricComplex(GeometricComplex):
 
     def __init__(self, cleaned_data, x_range=range(0, 1), y_range=range(1, 2),
-                 full_initialisation=True):
+                 full_initialisation=True, dimension=1):
         GeometricComplex.__init__(self, cleaned_data,
                                   x_range=x_range, y_range=y_range)
 
-        self.full_complex = self.create_full_complex()
+        self.full_complex = self.create_full_complex(dimension=dimension)
 
         self.cutoff = self.compute_the_last_death()
         self.limited_simplices = [s for s in self.full_complex
                                   if s.data[0] <= self.cutoff and
-                                  s.dimension() < 2]
+                                  s.dimension() <= dimension]
         logging.info("The threshold %f limits the Alpha complex size to "
                      "%d", self.cutoff, len(self.limited_simplices))
         self.annotated_simplices = [self.annotate_simplex(s)
@@ -269,7 +273,7 @@ class AlphaGeometricComplex(GeometricComplex):
         if full_initialisation:
             self.do_all_filtrations()
 
-    def create_full_complex(self):
+    def create_full_complex(self, dimension=1):
         """
         Creates the SORTED alpha complex (i.e. dionysus object) on
         self.points
@@ -277,7 +281,8 @@ class AlphaGeometricComplex(GeometricComplex):
         full_complex = self.dionysus.Filtration()
         self.dionysus.fill_alpha_complex(self.points.tolist(),
                                          full_complex)
-        one_skeleton = [smpl for smpl in full_complex if smpl.dimension() <= 1]
+        one_skeleton = [smpl for smpl in full_complex
+                        if smpl.dimension() <= dimension]
         full_complex = self.dionysus.Filtration(one_skeleton)
         logging.info("Created full Alpha complex of size %d",
                      len(full_complex))
