@@ -12,8 +12,8 @@ endif
 
 PYTHON = $(shell which python3)
 
-# FILE := all_pairs
-FILE := fast_pairs
+#FILE := SIM_pairs
+FILE := CEP_pairs_fast
 PAIRS := $(basename $(shell cat $(FILE)))
 
 default: knn
