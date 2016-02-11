@@ -10,8 +10,12 @@ import scipy.spatial as spsp
 
 
 def standardise(points):
-    """Standardise self.points, i.e.
-    mean = 0 and standard deviation = 1 in both dimensions"""
+    """
+    Standardise points, i.e. mean = 0 and standard deviation = 1 in both
+    dimensions
+    :param points: np.array
+    :return: np.array
+    """
     for i in range(points.shape[1]):
         p = points[:, i]
         mean = np.mean(p)
@@ -91,6 +95,8 @@ class OutlierRemoval:
         if len(true_outliers) != len(set(true_outliers)):
             logging.warning("There are some duplicates in the outliers! %s",
                             str(true_outliers))
+        # assert len(true_outliers) == len(set(true_outliers)), \
+        #     "There are some duplicates in the outliers!"
         return true_outliers
 
     def find_outliers_knn_old(self, k_nearest):
