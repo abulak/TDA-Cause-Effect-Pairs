@@ -1,48 +1,17 @@
-# ifndef PREFIX
-# 	PREFIX = test
-# endif
-# PAIRS_DIR = ./pairs
-
 PYTHON = $(shell which python3)
-
-MULTIPROCESS_FILE := ../../fast_pairs
-
-MULTIPROCESS_PAIRS := $(shell cat $(MULTIPROCESS_FILE))
-
-ifeq ($(filter $(PAIR), $(MULTIPROCESS_PAIRS)),)
-    SCRIPT = ../../TDA.py
-else
-    SCRIPT = ../../pair-multiprocessing.py
-endif
 
 default: knn
 
-allall: knn all
+knn: diagrams.knn
 
-knn: diagrams_knn 
+diagrams.knn: outliers.knn
+	$(PYTHON) ../TDA_mprocess.py "knn"
 
-all: diagrams_all
+outliers.knn: points.std
+	$(PYTHON) ../identify_outliers.py "knn"
 
-scores_knn diagrams_knn: outliers_knn
-	$(PYTHON) $(SCRIPT) "knn"
-
-scores_all diagrams_all : outliers_all
-	$(PYTHON) $(SCRIPT) "all"
-
-outliers_knn: std_points
-	$(PYTHON) ../../identify-outliers.py "knn"
-
-outliers_all: std_points
-	$(PYTHON) ../../identify-outliers.py "all"
-
-std_points: 
-	$(PYTHON) ../../points-sampler.py $(PAIR) $(SIZE) $(BINS)
-
-print:
-	@echo $(MULTIPAIRS)
-	@echo $(PAIR)
-	@echo $(SCRIPT)
-	@echo $(filter $(PAIR), $(MULTIPAIRS))
+points.std:
+	$(PYTHON) ../points_sampler.py $(SIZE) $(QUANTISE)
 
 .PHONY: clean
 

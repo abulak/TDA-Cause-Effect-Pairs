@@ -26,8 +26,7 @@ class CauseEffectPair:
 
         logging.info("Starting CauseEffectPair")
         self.model = model
-        pairs_dir = os.path.abspath(os.path.join(self.current_dir, os.pardir,
-                                                 os.pardir, 'pairs'))
+        pairs_dir = os.path.join(os.pardir, 'pairs')
         all_pairs_metadata = np.loadtxt(os.path.join(pairs_dir, 'pairmeta.txt'))
         self.metadata = all_pairs_metadata[int(self.name[-4:]) - 1]
         # metadata is a list of the form
@@ -45,14 +44,16 @@ class CauseEffectPair:
             self.y_range = range(int(self.metadata[1])-1, int(self.metadata[2]))
 
         self.prepare_points()
+        assert len(self.x_range) + len(self.y_range) == self.dimension, \
+            "Non-consistent metadata!"
 
     def prepare_points(self):
 
-        std_points_file = os.path.join(self.current_dir, "std_points")
+        std_points_file = os.path.join(self.current_dir, "points.std")
         self.std_points = np.loadtxt(std_points_file)
         self.dimension = self.std_points.shape[1]
 
-        outliers_file = os.path.join(self.current_dir, "outliers_" + self.model)
+        outliers_file = os.path.join(self.current_dir, "outliers." + self.model)
 
         outliers = np.loadtxt(outliers_file).astype(np.int)
         o, index = np.unique(outliers, return_index=True)
@@ -173,7 +174,7 @@ class CauseEffectPair:
         self.save_diagrams()
         self.save_extrema()
 
-    def save_diagrams(self, filename='diagrams_'):
+    def save_diagrams(self, filename='diagrams.'):
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
