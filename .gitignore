@@ -1,9 +1,8 @@
 __pycache__
 .idea
 .ipynb_checkpoints
-sampled-*
 *~
 Dionysus-python3
 *.ipynb
 *.png
-SIM*-results 
+*-results 
