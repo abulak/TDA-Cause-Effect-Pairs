@@ -158,6 +158,11 @@ pair0093		precipitation			runoff					MOPEX (ftp://hydrology.nws.noaa.gov/pub/gci
 pair0094		hour of day			temperature				S. Armagan Tarim	->
 pair0095		hour of day			electricity load			S. Armagan Tarim	->
 pair0096		temperature			electricity load			S. Armagan Tarim	->
-pair0097                speed at the beginning          speed at the end                        D. Janzing              ->     
 
+pair0097                speed at the beginning          speed at the end                        D. Janzing              ->     
+pair0098                speed at the beginning          speed at the end                        D. Janzing              ->    
+
+pair0099		language test score		social-economic status family		"nlschools" dataset of R MASS package		<-
+
+pair0100		cycle time of CPU		performance				"cpus" dataset of R MASS package		->
 
