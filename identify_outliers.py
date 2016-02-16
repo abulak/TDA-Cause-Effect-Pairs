@@ -40,14 +40,14 @@ class OutlierRemoval:
     string      self.target_dir     (path) where to save all the points/outliers
     """
 
-    def __init__(self, model):
+    def __init__(self, model="knn"):
         self.current_dir = os.getcwd()
         self.name = self.current_dir[-8:]
 
         logging.basicConfig(filename=self.name+".log", level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s')
 
-        points = np.loadtxt(os.path.join(self.current_dir, 'std_points'))
+        points = np.loadtxt(os.path.join(self.current_dir, 'points.std'))
         self.points = standardise(points)
         self.model = model
         self.dimension = self.points.shape[1]
@@ -158,7 +158,7 @@ class OutlierRemoval:
         logging.info('Done with outliers!')
 
     def save_outliers(self):
-        np.savetxt(os.path.join(self.current_dir, "outliers_" + self.model),
+        np.savetxt(os.path.join(self.current_dir, "outliers." + self.model),
                    np.asarray(self.outliers, dtype=int), fmt='%d')
 
 
@@ -173,4 +173,4 @@ if __name__ == "__main__":
         model = sys.argv[1]
         workflow(model)
     else:
-        print("Usage: identify-outliers.py $MODEL")
+        print("Usage: identify_outliers.py $MODEL")

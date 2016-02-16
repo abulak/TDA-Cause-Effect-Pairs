@@ -4,7 +4,7 @@ import os
 import logging
 
 
-def quantise(points, bins=False):
+def quantise(points):
     """
     if one of the axes in points is heavily digitised, digitise all the other
     to the same number of bins.
@@ -17,13 +17,10 @@ def quantise(points, bins=False):
     logging.info("Numbers of different values along axes (bins): %s",
                  str(number_of_bins))
     m = min(number_of_bins)
-    if bins is True:
-        # if points.shape[0]/m < 5:
-        #     return points
-        # else:  # it then looks quantised
-        logging.info("Pair %s has been quantised.", filename)
-        for i in range(points.shape[1]):
-            points[:, i] = fit_to_bins(points[:, i], m)
+
+    logging.info("Pair %s has been quantised.", filename)
+    for i in range(points.shape[1]):
+        points[:, i] = fit_to_bins(points[:, i], m)
 
     return points
 
@@ -43,7 +40,7 @@ def fit_to_bins(column, m):
     return digitised
 
 
-def workflow(filename, size=1000, bins=False):
+def workflow(filename, size=1000, quant=False):
 
     logging.basicConfig(filename=filename[:-4]+".log",
                         filemode='w',
@@ -53,8 +50,7 @@ def workflow(filename, size=1000, bins=False):
     logging.info("Sampling up to %d points from %s", size, filename)
     target_dir = os.path.join(os.getcwd())
 
-    os.chdir('../../')
-    raw_data = np.loadtxt(os.path.join(os.getcwd(), 'pairs', filename))
+    raw_data = np.loadtxt(os.path.join(os.pardir, 'pairs', filename))
     dimension = raw_data.shape[1]
     if size < 1:
         logging.info("Size parameter was <1. Using all available points.")
@@ -89,17 +85,19 @@ def workflow(filename, size=1000, bins=False):
         
         points = masked_points.compressed().reshape(new_shape)
 
-    std_points = quantise(points, bins=bins)
-    # std_points = points
-    np.savetxt(os.path.join(target_dir, 'std_points'), std_points)
+    if quant:
+        std_points = quantise(points)
+    else:
+        std_points = points
+    np.savetxt(os.path.join(target_dir, 'points.std'), std_points)
     logging.info("Sampling Done!")
 
 if __name__ == '__main__':
 
-    if len(sys.argv) == 4:
-        filename = sys.argv[1]
-        size = int(sys.argv[2])
-        bins = bool(int(sys.argv[3]))
-        workflow(filename, size, bins)
+    if len(sys.argv) == 3:
+        filename = os.getcwd()[-8:] + ".txt"
+        size = int(sys.argv[1])
+        quant = bool(int(sys.argv[2]))
+        workflow(filename, size, quant)
     else:
-        print("Usage: points-sampler.py $FILENAME $SIZE $BINS")
+        print("Usage: points_sampler.py $SIZE $QUANTISATION")

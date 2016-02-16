@@ -64,8 +64,11 @@ class MultiCoreCauseEffectPair(tda.CauseEffectPair):
         self.persistence_pairs = [x[1] for x in results]
 
 
-def workflow(model):
-    p = MultiCoreCauseEffectPair(model)
+def workflow(model=None):
+    if model is None:
+        p = MultiCoreCauseEffectPair()
+    else:
+        p = MultiCoreCauseEffectPair(model)
     p.compute_topological_summary()
     p.save_topological_summary()
 
@@ -73,4 +76,4 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         workflow(sys.argv[1])
     else:
-        print("Usage: pair-multiprocessing.py $MODEL")
+        print("Usage: TDA-multiprocessing.py $MODEL")
