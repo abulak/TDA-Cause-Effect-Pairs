@@ -5,4 +5,4 @@ __pycache__
 Dionysus-python3
 *.ipynb
 *.png
-*-results 
+*results 
