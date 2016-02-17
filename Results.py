@@ -230,7 +230,11 @@ class Analysis:
         for directory in dir_list:
             pair_dir = os.path.join(os.getcwd(), prefix, directory)
             if outlier_model == 'knn':
-                path_to_diagrams = os.path.join(pair_dir, "diagrams.knn")
+                path = os.path.join(pair_dir, "diagrams_knn")
+                if os.path.isfile(path):
+                    path_to_diagrams = path
+                else:
+                    path_to_diagrams = os.path.join(pair_dir, "diagrams.knn")
             elif outlier_model == 'all':
                 path_to_diagrams = os.path.join(pair_dir, "diagrams_all")
             else:
