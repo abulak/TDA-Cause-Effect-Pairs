@@ -25,16 +25,16 @@ class TopologyPlotter:
         else:
             self.name = name
         self.suffix = str(model)
-        self.points = standardise(np.loadtxt(os.path.join(path, 'std_points')))
+        self.points = standardise(np.loadtxt(os.path.join(path, 'points.std')))
 
         # scores_path = os.path.join(os.getcwd(), 'scores_' + self.suffix)
         # self.scores = np.loadtxt(scores_path)
 
-        diagrams_path = os.path.join(path, 'diagrams_' + self.suffix)
+        diagrams_path = os.path.join(path, 'diagrams.' + self.suffix)
         with open(diagrams_path, 'r') as file:
             self.diagrams = json.load(file)
 
-        outliers_path = os.path.join(path, 'outliers_' + self.suffix)
+        outliers_path = os.path.join(path, 'outliers.' + self.suffix)
         self.outliers = np.loadtxt(outliers_path).astype(np.int)
 
         assert self.outliers.shape[0] == len(set(list(self.outliers))), \
@@ -46,7 +46,7 @@ class TopologyPlotter:
         # self.outliers = np.array([x for x in true_outliers if x != -1],
         #                          dtype=int)
 
-        extrema_path = os.path.join(path, 'extrema_' + self.suffix)
+        extrema_path = os.path.join(path, 'extrema.' + self.suffix)
         with open(extrema_path, 'r') as file:
             self.extrema = json.load(file)
 

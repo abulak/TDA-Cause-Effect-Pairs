@@ -213,7 +213,7 @@ class Analysis:
 
         try:
             self.metadata = np.loadtxt(
-                os.path.join(os.getcwd(), prefix, 'pairmeta.txt'))
+                os.path.join(os.getcwd(), prefix, 'pairs', 'pairmeta.txt'))
         except FileNotFoundError:
             logging.warning("No metadata found! All is set to 0")
             self.metadata = np.zeros((100, 6))
@@ -230,7 +230,7 @@ class Analysis:
         for directory in dir_list:
             pair_dir = os.path.join(os.getcwd(), prefix, directory)
             if outlier_model == 'knn':
-                path_to_diagrams = os.path.join(pair_dir, "diagrams_knn")
+                path_to_diagrams = os.path.join(pair_dir, "diagrams.knn")
             elif outlier_model == 'all':
                 path_to_diagrams = os.path.join(pair_dir, "diagrams_all")
             else:

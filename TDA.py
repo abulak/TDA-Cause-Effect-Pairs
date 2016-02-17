@@ -182,7 +182,7 @@ class CauseEffectPair:
             # for line in self.knn.persistence_pairs:
             #     f.write(line)
 
-    def save_extrema(self, filename='extrema_'):
+    def save_extrema(self, filename='extrema.'):
         import json
         file = os.path.join(self.current_dir, filename + self.model)
         with open(file, 'w') as f:
