@@ -250,8 +250,9 @@ class Analysis:
             self.pairs_dict[p.name] = p
 
         self.regenerate_results()
-
-        l = [(p_name, [v.causality_inferred, v.weight, v.confidence,
+        tmp = [v.confidence for k, v in self.pairs_dict.items()]
+        m = max(tmp)
+        l = [(p_name, [v.causality_inferred, v.weight, v.confidence/m,
                        v.causality_true])
              for p_name, v in self.pairs_dict.items()]
 
