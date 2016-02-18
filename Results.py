@@ -8,6 +8,8 @@ import logging
 import re
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 
 back_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 sys.path.append(os.path.join(back_path,
@@ -300,3 +302,84 @@ class Analysis:
         # print(label, "Total weight:", sum(weights[:m-1]))
         return sum(weights[:m-1]), to_plot[-1]
 
+
+def sample_from(experiment_dir, size=1000):
+    pair_filename = re.compile('pair[0-9]{4}\.txt')
+    pairs_lsdir = os.listdir(os.path.join(experiment_dir, "pairs"))
+    all_pair_names = sorted([x for x in pairs_lsdir if pair_filename.match(x)])
+    pairs = {}
+    for filename in all_pair_names:
+        raw_data = np.loadtxt(os.path.join(experiment_dir, "pairs", filename))
+        if raw_data.shape[0] > size:
+            indices = np.random.randint(0, raw_data.shape[0], size)
+            raw_data = raw_data[indices]
+        pairs[filename[:-4]] = standardise(raw_data[:, 0:2])
+    return pairs
+
+
+def grid_of_scatter_plots(experiment_dir, results):
+
+    pairs_dict = sample_from(experiment_dir)
+
+    metadata = np.loadtxt(os.path.join(experiment_dir,
+                                       "pairs", "pairmeta.txt"))
+    n_of_columns = 12
+    n_of_rows = 9
+    fig, subplots = plt.subplots(ncols=n_of_columns, nrows=n_of_rows)
+    fig.set_size_inches(23.38,  16.54)
+    for i in range(n_of_rows):
+        for j in range(n_of_columns):
+            axis = subplots[i, j]
+            if i*n_of_columns+j < len(pairs_dict):
+                pair_number = i*n_of_columns+j+1
+                pair_name = 'pair'+"{:04d}".format(pair_number)
+                pair_points = pairs_dict[pair_name]
+                pair_computed = results[experiment_dir].pairs_dict[pair_name]
+
+                if metadata[pair_number-1][1] == 1:
+                    axis.patch.set_facecolor('red')
+                    axis.patch.set_alpha(0.2)
+                else:
+                    axis.patch.set_facecolor('blue')
+                    axis.patch.set_alpha(0.2)
+
+                if pair_computed.causality_inferred == 1:
+                    color = 'red'
+                else:
+                    color = 'blue'
+                axis.scatter(pair_points[:, 0], pair_points[:, 1],
+                             color=color, alpha=0.2, s=5)
+                plt.text(0.8,0.05, "{:03d}".format(pair_number),
+                         transform=axis.transAxes)
+                plt.text(0.1,0.05,
+                         "{:0.4f}".format(pair_computed.confidence),
+                         transform=axis.transAxes)
+            axis.spines.clear()
+            axis.set_xticks([])
+            axis.set_yticks([])
+    red_patch = mpatches.Patch(color='red', alpha=0.2)
+    blue_patch = mpatches.Patch(color='blue', alpha=0.2)
+    red_dot = subplots[0, 0].scatter([0.5], [0], c="r", s=5, linewidths=0)
+    blue_dot = subplots[0, 0].scatter([0], [0.5], c='b', s=5, linewidths=0)
+
+    plt.legend((red_patch, blue_patch, red_dot, blue_dot),
+               ("Truth: X→Y", "Truth: Y→X",
+                "Inferred: X→Y", "Inferred: Y→X"),
+               loc=0, title=experiment_dir, fontsize=20, scatterpoints=5,
+               ncol=2)
+    plt.tight_layout()
+
+
+def standardise(points):
+    """
+    Standardise points
+    :param points: np.array
+    :return: np.array of points after standardisation (mean=0, st deviation=1)
+    """
+    for i in range(points[0].shape[0]):
+        p = points[:, i]
+        mean = np.mean(p)
+        std = np.std(p)
+        p -= mean
+        p /= std
+    return points
