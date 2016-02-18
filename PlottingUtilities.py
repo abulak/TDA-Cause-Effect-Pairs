@@ -1,8 +1,10 @@
+import os
+import json
+import re
+
 import numpy as np
 import numpy.ma as ma
 
-import os
-import json
 
 # import matplotlib
 # matplotlib.use('Agg')
@@ -15,8 +17,8 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 class TopologyPlotter:
     """
-    Outlier Plotter; requires outliers model and assumes outliers_$model and
-    orig_points are in the working directory
+    Outlier Plotter; requires outliers model and assumes points.std,
+    outliers.$model, and diagram.$model are in the path given.
     """
 
     def __init__(self, path, model="knn", name=None):
@@ -27,24 +29,15 @@ class TopologyPlotter:
         self.suffix = str(model)
         self.points = standardise(np.loadtxt(os.path.join(path, 'points.std')))
 
-        # scores_path = os.path.join(os.getcwd(), 'scores_' + self.suffix)
-        # self.scores = np.loadtxt(scores_path)
-
-        diagrams_path = os.path.join(path, 'diagrams.' + self.suffix)
-        with open(diagrams_path, 'r') as file:
-            self.diagrams = json.load(file)
-
         outliers_path = os.path.join(path, 'outliers.' + self.suffix)
         self.outliers = np.loadtxt(outliers_path).astype(np.int)
 
         assert self.outliers.shape[0] == len(set(list(self.outliers))), \
             "Duplicates in outliers!"
-        # o, index = np.unique(outliers, return_index=True)
-        # true_outliers = len(outliers)*[-1]
-        # for i in index:
-        #     true_outliers[i] = outliers[i]
-        # self.outliers = np.array([x for x in true_outliers if x != -1],
-        #                          dtype=int)
+
+        diagrams_path = os.path.join(path, 'diagrams.' + self.suffix)
+        with open(diagrams_path, 'r') as file:
+            self.diagrams = json.load(file)
 
         extrema_path = os.path.join(path, 'extrema.' + self.suffix)
         with open(extrema_path, 'r') as file:
