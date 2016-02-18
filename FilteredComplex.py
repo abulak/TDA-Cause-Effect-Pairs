@@ -79,9 +79,9 @@ class FilteredComplex:
                             logging.warning("%s, %s, %s, %s",
                                             str(birth_simplex), str(birth),
                                             str(killing_simplex), str(death))
-                elif birth_simplex.dimension() > 1:
-                    logging.warning("There should be no simplices of dim >1?! "
-                                    "but there is: %s", str(birth_simplex))
+                elif birth_simplex.dimension() > 2:
+                    logging.info("There should be no simplices of dim >2: %s",
+                                 str(birth_simplex))
         return homology
 
     def create_persistence_diagrams(self):
@@ -138,9 +138,9 @@ class SweepFilteredComplex(FilteredComplex):
                             logging.warning("%s %s %s %s",
                                             str(birth_simplex), str(birth),
                                             str(killing_simplex), str(death))
-                elif birth_simplex.dimension() > 1:
-                    logging.warning("There should be no simplices of dim >1?! "
-                                    "but there is: %s", birth_simplex)
+                elif birth_simplex.dimension() > 2:
+                    logging.info("There should be no simplices of dim >2?!: %s",
+                                 str(birth_simplex))
         return homology
 
 
